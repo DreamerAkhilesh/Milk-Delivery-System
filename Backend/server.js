@@ -2,6 +2,8 @@ import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
 import connectDB from "./config/db.js";
+import cookieParser from 'cookie-parser';
+
 
 // Load environment variables
 dotenv.config();
@@ -13,7 +15,13 @@ connectDB();
 const app = express();
 
 // Middleware
-app.use(cors());
+app.use(express.urlencoded({extended:true})) ;
+app.use(cookieParser()) ;
+const corsOptions = {
+    origin:'http://localhost:5174', // Replace with your frontend URL
+    credentials:true
+}
+app.use(cors(corsOptions)) ;
 app.use(express.json()); // To parse JSON request bodies
 
 
