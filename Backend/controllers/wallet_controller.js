@@ -54,3 +54,94 @@ export const verifyPayment = async (req, res) => {
     res.status(500).json({ message: "Error verifying payment", error });
   }
 };
+
+
+import User from "../models/user_model.js";
+
+/**
+ * Get wallet transactions for all users.
+ *
+ * This endpoint aggregates wallet transactions by:
+ * - Unwinding the 'wallet.transactions' array so each transaction becomes a separate document.
+ * - Projecting the userId, name, and transaction details.
+ * - Sorting transactions by date in descending order.
+ */
+export const getAllWalletTransactions = async (req, res) => {
+  try {
+    const walletTransactions = await User.aggregate([
+      {
+        // Unwind the transactions array to list each transaction separately
+        $unwind: "$wallet.transactions",
+      },
+      {
+        // Project only the required fields
+        $project: {
+          userId: "$_id",
+          name: "$name",
+          transaction: "$wallet.transactions",
+        },
+      },
+      {
+        // Sort transactions by date in descending order
+        $sort: { "transaction.date": -1 },
+      },
+    ]);
+
+    res.json(walletTransactions);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching wallet transactions", error });
+  }
+};
+
+
+import mongoose from "mongoose";
+import User from "../models/user_model.js";
+
+/**
+ * Get wallet transactions for a specific user.
+ *
+ * This endpoint accepts a 'userId' parameter in the URL and aggregates the wallet transactions
+ * for that user by:
+ * - Matching the specific user document.
+ * - Unwinding the 'wallet.transactions' array.
+ * - Projecting the userId, name, and transaction details.
+ * - Sorting transactions by date in descending order.
+ */
+export const getWalletTransactionsByUser = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    // Validate the provided user ID
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({ message: "Invalid user ID" });
+    }
+
+    const walletTransactions = await User.aggregate([
+      {
+        // Match the user by _id
+        $match: { _id: mongoose.Types.ObjectId(userId) },
+      },
+      {
+        // Unwind the transactions array to get individual transactions
+        $unwind: "$wallet.transactions",
+      },
+      {
+        // Project required fields
+        $project: {
+          userId: "$_id",
+          name: "$name",
+          transaction: "$wallet.transactions",
+        },
+      },
+      {
+        // Sort transactions by date in descending order
+        $sort: { "transaction.date": -1 },
+      },
+    ]);
+
+    res.json(walletTransactions);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching wallet transactions", error });
+  }
+};
+

@@ -217,6 +217,32 @@ export const loginUser = async (req, res) => {
 };
 
 
+/**
+ * Endpoint for a user to voluntarily pause their subscription.
+ */
+export const pauseSubscriptionByUser = async (req, res) => {
+  try {
+    const { subscriptionId } = req.body; // Subscription ID from the user's request
+
+    // Update the subscription status to paused with the user-initiated reason
+    const subscription = await Subscription.findByIdAndUpdate(
+      subscriptionId,
+      {
+        status: "paused",
+        pauseReason: "user_paused",
+      },
+      { new: true } // Return the updated subscription document
+    );
+
+    if (!subscription) {
+      return res.status(404).json({ message: "Subscription not found" });
+    }
+
+    res.json({ message: "Subscription paused successfully", subscription });
+  } catch (error) {
+    res.status(500).json({ message: "Error pausing subscription", error });
+  }
+};
 
 
 
