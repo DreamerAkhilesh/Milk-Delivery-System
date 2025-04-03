@@ -215,3 +215,77 @@ export const pauseInsufficientBalanceSubscriptions = async (req, res) => {
     res.status(500).json({ message: "Error pausing subscriptions", error });
   }
 };
+
+import User from "../models/user_model.js";
+import Subscription from "../models/subscription_model.js";
+
+/**
+ * Get admin dashboard statistics
+ */
+export const getDashboardStats = async (req, res) => {
+  try {
+    const today = new Date().toISOString().split("T")[0];
+
+    // Count active subscriptions
+    const activeUsers = await Subscription.countDocuments({ status: "active" });
+
+    // Count paused subscriptions (voluntary + insufficient balance)
+    const pausedVoluntary = await Subscription.countDocuments({ status: "paused", reason: "voluntary" });
+    const pausedInsufficient = await Subscription.countDocuments({ status: "paused", reason: "insufficient_balance" });
+    const totalPaused = pausedVoluntary + pausedInsufficient;
+
+    // Total wallet transactions today
+    const transactions = await User.aggregate([
+      { $unwind: "$wallet.transactions" },
+      {
+        $match: {
+          "wallet.transactions.date": {
+            $gte: new Date(today),
+            $lt: new Date(new Date(today).setDate(new Date(today).getDate() + 1)),
+          },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          totalCredited: {
+            $sum: {
+              $cond: [{ $eq: ["$wallet.transactions.type", "credit"] }, "$wallet.transactions.amount", 0],
+            },
+          },
+          totalDebited: {
+            $sum: {
+              $cond: [{ $eq: ["$wallet.transactions.type", "debit"] }, "$wallet.transactions.amount", 0],
+            },
+          },
+        },
+      },
+    ]);
+
+    const walletSummary = transactions.length > 0 ? transactions[0] : { totalCredited: 0, totalDebited: 0 };
+
+    // Deliveries completed today
+    const deliveriesCompleted = await Subscription.countDocuments({
+      "deliveryHistory.date": new Date(today),
+      "deliveryHistory.status": "delivered",
+    });
+
+    // Failed deliveries (low balance)
+    const failedDeliveries = await Subscription.countDocuments({
+      "deliveryHistory.date": new Date(today),
+      "deliveryHistory.status": "missed",
+    });
+
+    res.json({
+      totalActiveUsers: activeUsers,
+      pausedSubscriptions: { voluntary: pausedVoluntary, insufficientBalance: pausedInsufficient, total: totalPaused },
+      walletTransactions: walletSummary,
+      deliveriesCompleted,
+      failedDeliveries,
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching dashboard stats", error });
+  }
+};
+
+
