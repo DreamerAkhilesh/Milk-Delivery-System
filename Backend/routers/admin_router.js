@@ -11,9 +11,3 @@ router.post("/admin/dispatch", verifyAdmin, dispatchProducts); // Admin-only rou
 router.get("/dashboard-stats", getDashboardStats); // dashboard-stats
 
 export default router;
-
-
-
-
-
-

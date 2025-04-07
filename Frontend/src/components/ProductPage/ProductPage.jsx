@@ -3,25 +3,25 @@ import Navbar from "../shared/Navbar";
 import { CategorySection } from "../ProductPage/ProductCard";
 
 const categoriesData = [
-  { id: 1, name: "Fruits", icon: "🍎" },
-  { id: 2, name: "Vegetables", icon: "🥦" },
-  { id: 3, name: "Dairy", icon: "🧀" },
-  { id: 4, name: "Snacks", icon: "🍪" },
+  { id: 1, name: "Milk", icon: "🥛" },
+  { id: 2, name: "Milk Products", icon: "🧈" },
+  { id: 3, name: "Traditional Sweets", icon: "🍮" },
 ];
 
 const productsData = {
   1: [
-    { id: 1, name: "Apple", description: "Fresh Red Apple", image: "path-to-apple.jpg" },
-    { id: 2, name: "Banana", description: "Organic Banana", image: "path-to-banana.jpg" },
+    { id: 1, name: "Cow Milk", description: "Fresh and pure cow milk", image: "path-to-cow-milk.jpg" },
+    { id: 2, name: "Buffalo Milk", description: "High cream buffalo milk", image: "path-to-buffalo-milk.jpg" },
   ],
   2: [
-    { id: 3, name: "Carrot", description: "Sweet and Crunchy", image: "path-to-carrot.jpg" },
+    { id: 3, name: "Paneer", description: "Fresh homemade paneer", image: "path-to-paneer.jpg" },
+    { id: 4, name: "Ghee", description: "Pure desi ghee", image: "path-to-ghee.jpg" },
+    { id: 5, name: "Curd", description: "Thick and creamy curd", image: "path-to-curd.jpg" },
   ],
   3: [
-    { id: 4, name: "Milk", description: "Pure Cow Milk", image: "path-to-milk.jpg" },
-  ],
-  4: [
-    { id: 5, name: "Chips", description: "Crispy & Tasty", image: "path-to-chips.jpg" },
+    { id: 6, name: "Rasgulla", description: "Soft and juicy rasgullas", image: "path-to-rasgulla.jpg" },
+    { id: 7, name: "Gulab Jamun", description: "Warm and syrupy delight", image: "path-to-gulab-jamun.jpg" },
+    { id: 8, name: "Kalakand", description: "Milky and rich traditional sweet", image: "path-to-kalakand.jpg" },
   ],
 };
 

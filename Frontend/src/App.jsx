@@ -5,6 +5,8 @@ import Signup from './components/auth/Signup';
 import Profile from './components/ProfilePage/profile';
 import ProductPage from './components/ProductPage/ProductPage';
 import Dashboard from './components/Dashboard/Dashboard';
+import AdminProductPage from './components/ProductPage/ProductPageAdmin';
+import UserManagement from './components/UserManagement/UserManagement';
 // react-router-dom is used in React applications to handle routing, allowing you to navigate between different pages (components) without reloading the browser. It provides tools for defining routes, navigating between pages, and managing URL parameters.
 
 
@@ -35,6 +37,14 @@ const appRouter = createBrowserRouter(
     {
       path:'/admin',
       element:<Dashboard />
+    },
+    {
+      path:'/admin/products',
+      element:<AdminProductPage />
+    },
+    {
+      path:'/admin/usermanagement',
+      element:<UserManagement />
     },
   
   ]

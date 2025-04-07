@@ -32,6 +32,7 @@ const Signup = () => {
 
     try {
       // Send OTP request to the backend
+      console.log("OTP Send") ;
       await axios.post(`${USER_API_END_POINT}/send-otp`, { email: formData.email });
       setOtpSent(true); // OTP sent successfully
     } catch (error) {
@@ -41,6 +42,8 @@ const Signup = () => {
       setLoading(false);
     }
   };
+
+  
 
   const verifyAndRegister = async () => {
     if (!otp) {

@@ -5,10 +5,10 @@ import Product from "../models/product_model.js";
  */
 export const addProduct = async (req, res) => {
   try {
-    const { name, description, pricePerDay, images, quantity, category, subcategory, availability } = req.body;
+    const { name, description, pricePerDay, images, quantity, category, availability } = req.body;
 
     // Validate required fields
-    if (!name || !description || !pricePerDay || !images || images.length === 0 || !quantity || !category || !subcategory) {
+    if (!name || !description || !pricePerDay || !images || images.length === 0 || !quantity || !category) {
       return res.status(400).json({ message: "All fields are required, including at least one image." });
     }
 
@@ -20,7 +20,6 @@ export const addProduct = async (req, res) => {
       images,
       quantity,
       category,
-      subcategory,
       availability: availability ?? true, // Default to true if not provided
     });
 

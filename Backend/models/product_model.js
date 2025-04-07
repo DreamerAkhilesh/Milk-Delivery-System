@@ -18,29 +18,17 @@ const productSchema = new mongoose.Schema({
   },
   images: [
     {
-      type: String, // URLs of product images
+      type: String, 
       required: true,
     },
   ],
   quantity: {
-    type: String, // Example: "500ml", "1L"
+    type: String, 
     required: true,
   },
   category: {
     type: String,
-    enum: ["Milk", "Curd", "Cheese", "Butter", "Paneer", "Other"],
-    required: true,
-  },
-  subcategory: {
-    type: String,
-    enum: [
-      "Cow Milk", "Buffalo Milk", "Toned Milk", "Full Cream Milk",
-      "Greek Yogurt", "Probiotic Curd", "Fresh Cream",
-      "Cottage Cheese", "Processed Cheese", "Mozzarella",
-      "Unsalted Butter", "Salted Butter", "Ghee",
-      "Soft Paneer", "Hard Paneer",
-      "Other"
-    ],
+    enum: ["Milk", "Milk Products", "Traditional Sweets"],
     required: true,
   },
   availability: {

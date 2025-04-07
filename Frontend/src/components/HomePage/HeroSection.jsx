@@ -1,9 +1,14 @@
-import React from "react";
+import React, { useEffect } from "react";
+import AOS from "aos";
+import "aos/dist/aos.css";
 
 
 const HeroSection = () => {
+  useEffect(() => {
+      AOS.init({ duration: 1000, once: true });
+    }, []);
   return (
-    <div className="relative w-full h-[90vh] flex items-center justify-center bg-[#00B86C] text-white">
+    <div className="relative w-full h-[90vh] flex items-center justify-center bg-[#49BDE9] text-white">
       <div className="container mx-auto flex flex-col md:flex-row items-center px-6 md:px-12">
         {/* Left Content */}
         <div className="md:w-1/2 text-center md:text-left">
@@ -14,7 +19,7 @@ const HeroSection = () => {
             Enjoy the richness of farm-fresh milk and dairy, sourced directly
             from trusted farms. Experience purity like never before.
           </p>
-          <button className="bg-white text-[#00B86C] font-semibold px-6 py-3 rounded-lg hover:bg-gray-200">
+          <button className="bg-white text-[#014D87] font-semibold px-6 py-3 rounded-lg hover:bg-gray-200">
             Order Now
           </button>
         </div>

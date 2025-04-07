@@ -32,4 +32,3 @@ export default User;
 // API to Add Money to Wallet
 // API to Deduct Money on Delivery
 // Allow Users to Update Address
-
