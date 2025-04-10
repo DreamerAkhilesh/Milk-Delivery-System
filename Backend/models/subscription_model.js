@@ -1,3 +1,5 @@
+import mongoose from "mongoose";
+
 const SubscriptionSchema = new mongoose.Schema({
   userId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -46,3 +48,5 @@ const SubscriptionSchema = new mongoose.Schema({
     default: "none",
   },
 });
+
+export default mongoose.model("Subscription", SubscriptionSchema);

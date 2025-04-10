@@ -29,7 +29,7 @@ const HeroSection = () => {
           <img
             src={"../src/assets/logo1.png"}
             alt="Fresh Milk Delivery"
-            className="rounded-lg shadow-lg w-full max-w-md"
+            className="rounded-lg w-full max-w-md"
           />
         </div>
       </div>

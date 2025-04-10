@@ -1,4 +1,4 @@
-import { createBrowserRouter, RouterProvider } from 'react-router-dom'
+import { Routes, Route, Navigate } from 'react-router-dom'
 import Home from './components/HomePage/Home'
 import Login from './components/auth/Login';
 import Signup from './components/auth/Signup';
@@ -7,56 +7,30 @@ import ProductPage from './components/ProductPage/ProductPage';
 import Dashboard from './components/Dashboard/Dashboard';
 import AdminProductPage from './components/ProductPage/ProductPageAdmin';
 import UserManagement from './components/UserManagement/UserManagement';
-// react-router-dom is used in React applications to handle routing, allowing you to navigate between different pages (components) without reloading the browser. It provides tools for defining routes, navigating between pages, and managing URL parameters.
-
-
-
-
-const appRouter = createBrowserRouter(
-  [
-    {
-      path:'/',
-      element:<Home/>
-    },
-    {
-      path:'/login',
-      element:<Login/>
-    },
-    {
-      path:'/signup',
-      element:<Signup/>
-    },
-    {
-      path:'/profile',
-      element:<Profile/>
-    },
-    {
-      path:'/products',
-      element:<ProductPage/>
-    },
-    {
-      path:'/admin',
-      element:<Dashboard />
-    },
-    {
-      path:'/admin/products',
-      element:<AdminProductPage />
-    },
-    {
-      path:'/admin/usermanagement',
-      element:<UserManagement />
-    },
-  
-  ]
-) ;
+import AdminLogin from './components/auth/AdminLogin';
+import AdminRegister from './components/auth/AdminRegister';
 
 function App() {
   return (
-    <>
-      <RouterProvider router={appRouter}/>
-
-    </>
+    <Routes>
+      {/* Public Routes */}
+      <Route path="/" element={<Navigate to="/admin/login" />} />
+      
+      {/* Admin Routes */}
+      <Route path="/admin" element={<Dashboard />} />
+      <Route path="/admin/login" element={<AdminLogin />} />
+      <Route path="/admin/register" element={<AdminRegister />} />
+      <Route path="/admin/products" element={<AdminProductPage />} />
+      <Route path="/admin/users" element={<UserManagement />} />
+      
+      {/* User Routes */}
+      <Route path="/home" element={<Home />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/signup" element={<Signup />} />
+      <Route path="/profile" element={<Profile />} />
+      <Route path="/products" element={<ProductPage />} />
+    </Routes>
   );
-};
+}
 
 export default App

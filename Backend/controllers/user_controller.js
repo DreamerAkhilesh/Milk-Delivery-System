@@ -92,7 +92,7 @@ export const sendOTP = async (req, res) => {
 
 export const registerUser = async (req, res) => {
   try {
-    console.log("🔹 Incoming Request Data:", req.body); // Log full request body
+    console.log("🔹 Incoming Request Data:", req.body);
 
     const { name, email, password, phoneNumber, address, otp } = req.body;
 
@@ -101,9 +101,7 @@ export const registerUser = async (req, res) => {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
-    // Step 1: Fetch OTP from DB
     const otpRecord = await OTP.findOne({ email });
-
     console.log("📌 Fetched OTP Record:", otpRecord);
 
     if (!otpRecord) {
@@ -111,60 +109,41 @@ export const registerUser = async (req, res) => {
       return res.status(400).json({ message: "OTP not found or expired" });
     }
 
-    console.log(`📌 Stored OTP: ${otpRecord.otp}, User Input OTP: ${otp}`);
-
-    // Step 2: Validate OTP
     if (otpRecord.otp.toString() !== otp.toString()) {
       console.error(`❌ OTP mismatch: Expected ${otpRecord.otp}, Got ${otp}`);
       return res.status(400).json({ message: "Invalid OTP" });
     }
-
-    console.log(`⏳ OTP Expiry Time: ${otpRecord.expiresAt}, Current Time: ${new Date()}`);
 
     if (otpRecord.expiresAt < new Date()) {
       console.error(`❌ OTP expired for email: ${email}`);
       return res.status(400).json({ message: "OTP expired" });
     }
 
-    console.log("✅ OTP verified successfully!");
+    await OTP.deleteOne({ email });
+    console.log("🗑️ OTP deleted");
 
-    // Step 3: Delete OTP after successful verification
-    const deleteResult = await OTP.deleteOne({ email });
-    console.log("🗑️ OTP deleted:", deleteResult);
-
-    // Step 4: Check if the user already exists
     const existingUser = await User.findOne({ email });
-    console.log("🔎 Checking existing user:", existingUser);
-
     if (existingUser) {
       console.error(`❌ User already exists: ${email}`);
       return res.status(400).json({ message: "User already exists" });
     }
 
-    console.log("✅ User does not exist. Proceeding with registration...");
-
-    // Step 5: Hash the password
     const hashedPassword = await bcrypt.hash(password, 10);
-    console.log("🔑 Password hashed successfully");
 
-    // Step 6: Create new user
     const newUser = new User({
       name,
       email,
       password: hashedPassword,
+      role: "user", // 👈 Store role as 'user'
       profile: { phoneNumber, address: address || null },
       wallet: { balance: 0 },
     });
 
     await newUser.save();
-    console.log("✅ New user registered:", newUser);
 
-    // Step 7: Generate JWT token
     const token = jwt.sign({ userId: newUser._id }, process.env.JWT_SECRET, {
       expiresIn: "7d",
     });
-
-    console.log(`🎉 Registration successful for ${email}`);
 
     res.status(201).json({
       message: "User registered successfully",
@@ -176,11 +155,10 @@ export const registerUser = async (req, res) => {
     res.status(500).json({
       message: "Error registering user",
       error: error.message || error.toString(),
-      stack: error.stack, // Include stack trace for debugging
+      stack: error.stack,
     });
   }
 };
-
 
 
 

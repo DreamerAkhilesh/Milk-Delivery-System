@@ -1,38 +1,68 @@
-import Admin from "../models/admin.js";
+import Admin from "../models/admin_model.js";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
+import mongoose from "mongoose";
+import User from "../models/user_model.js";
+import Subscription from "../models/subscription_model.js";
 
-
-// Register Admin
 export const registerAdmin = async (req, res) => {
   try {
     const { name, email, password } = req.body;
 
-    // Check if the email is in the allowed admin list
-    const adminEmails = process.env.ADMIN_EMAILS.split(",");
-    if (!adminEmails.includes(email)) {
-      return res.status(403).json({ message: "Unauthorized admin email" });
+    // 1. Validate input
+    if (!name || !email || !password) {
+      return res.status(400).json({ message: "All fields are required: name, email, password" });
     }
 
-    // Check if admin already exists
-    let admin = await Admin.findOne({ email });
-    if (admin) {
-      return res.status(400).json({ message: "Admin already exists" });
+    // 2. Check if admin emails are configured
+    const adminEmailsEnv = process.env.ADMIN_EMAILS;
+    if (!adminEmailsEnv) {
+      console.error("❌ ADMIN_EMAILS not configured in .env");
+      return res.status(500).json({ message: "Admin email list not configured. Contact support." });
     }
 
-    // Hash the password before saving
+    const adminEmails = adminEmailsEnv.split(",").map(email => email.trim().toLowerCase());
+
+    // 3. Check if the given email is in allowed admin list
+    if (!adminEmails.includes(email.toLowerCase())) {
+      return res.status(403).json({ message: "Unauthorized admin email. Contact support." });
+    }
+
+    // 4. Check for duplicate admin
+    const existingAdmin = await Admin.findOne({ email: email.toLowerCase() });
+    if (existingAdmin) {
+      return res.status(400).json({ message: "Admin already exists with this email." });
+    }
+
+    // 5. Hash password
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    // Create new admin
-    admin = new Admin({ name, email, password: hashedPassword });
-    await admin.save();
+    // 6. Create and save new admin
+    const newAdmin = new Admin({
+      name,
+      email: email.toLowerCase(),
+      password: hashedPassword,
+      role: "admin"
+    });
 
+    await newAdmin.save();
+
+    // 7. Respond success
     res.status(201).json({ message: "Admin registered successfully" });
+
   } catch (error) {
-    res.status(500).json({ message: "Error registering admin", error });
+    console.error("Error in registerAdmin:", error);
+
+    if (error.name === "ValidationError") {
+      return res.status(400).json({ message: "Validation error", details: error.message });
+    }
+
+    res.status(500).json({ message: "Internal server error. Please try again later." });
   }
 };
+
+
 
 
 // Admin Login
@@ -54,7 +84,17 @@ export const loginAdmin = async (req, res) => {
     // Generate JWT Token
     const token = jwt.sign({ id: admin._id, role: "admin" }, process.env.JWT_SECRET, { expiresIn: "1d" });
 
-    res.json({ message: "Admin logged in successfully", token });
+    // Send response with admin data and token
+    res.json({
+      message: "Admin logged in successfully",
+      token,
+      admin: {
+        id: admin._id,
+        name: admin.name,
+        email: admin.email,
+        role: admin.role
+      }
+    });
   } catch (error) {
     res.status(500).json({ message: "Error logging in admin", error });
   }
@@ -182,10 +222,11 @@ export const dispatchDeliveries = async (req, res) => {
 
 /**
  * Pause subscriptions for users with insufficient wallet balance.
- * This endpoint checks each active subscription to see if the user’s
+ * This endpoint checks each active subscription to see if the user's
  * wallet balance is less than the price per day. If so, the subscription
  * status is updated to "paused" and (optionally) a notification can be sent.
  */
+
 export const pauseInsufficientBalanceSubscriptions = async (req, res) => {
   try {
     // Fetch all active subscriptions
@@ -216,8 +257,6 @@ export const pauseInsufficientBalanceSubscriptions = async (req, res) => {
   }
 };
 
-import User from "../models/user_model.js";
-import Subscription from "../models/subscription_model.js";
 
 /**
  * Get admin dashboard statistics
@@ -230,8 +269,8 @@ export const getDashboardStats = async (req, res) => {
     const activeUsers = await Subscription.countDocuments({ status: "active" });
 
     // Count paused subscriptions (voluntary + insufficient balance)
-    const pausedVoluntary = await Subscription.countDocuments({ status: "paused", reason: "voluntary" });
-    const pausedInsufficient = await Subscription.countDocuments({ status: "paused", reason: "insufficient_balance" });
+    const pausedVoluntary = await Subscription.countDocuments({ status: "paused", pauseReason: "user_paused" });
+const pausedInsufficient = await Subscription.countDocuments({ status: "paused", pauseReason: "insufficient_balance" });
     const totalPaused = pausedVoluntary + pausedInsufficient;
 
     // Total wallet transactions today

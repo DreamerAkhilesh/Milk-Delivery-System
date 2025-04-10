@@ -1,9 +1,9 @@
 import React, { useEffect } from "react";
 import AOS from "aos";
 import "aos/dist/aos.css";
-import delivery from "../../assets/Factory.jpg";
-import cattle from "../../assets/Delivery.jpg";
-import farms from "../../assets/Farm.jpg";
+import Delivery from "../../assets/Delivery.png";
+import Farm from "../../assets/Farm.png";
+import Factory from "../../assets/Factory.png";
 
 const TrustSection = () => {
   useEffect(() => {
@@ -25,7 +25,7 @@ const TrustSection = () => {
           >
             <div className="w-40 h-40 bg-white rounded-full flex items-center justify-center mb-4 shadow-md relative overflow-visible">
               <img
-                src={cattle}
+                src={Farm}
                 alt="Milk Collection"
                 className="w-32 h-32 absolute bottom-0"
               />
@@ -51,7 +51,7 @@ const TrustSection = () => {
           >
             <div className="w-40 h-40 bg-white rounded-full flex items-center justify-center mb-4 shadow-md relative overflow-visible">
               <img
-                src={farms}
+                src={Factory}
                 alt="Quality Testing"
                 className="w-32 h-32 absolute bottom-0"
               />
@@ -77,7 +77,7 @@ const TrustSection = () => {
           >
             <div className="w-40 h-40 bg-white rounded-full flex items-center justify-center mb-4 shadow-md relative overflow-visible">
               <img
-                src={delivery}
+                src={Delivery}
                 alt="Home Delivery"
                 className="w-32 h-32 absolute bottom-0"
               />
