@@ -1,14 +1,24 @@
-import React from "react";
+import React, { useState } from "react";
 import { Trash2, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const AdminProductCard = ({ product, onDelete, onEdit }) => {
+  const [imageError, setImageError] = useState(false);
+  const defaultImage = "/images/default-product.png";
+
+  const handleImageError = () => {
+    if (!imageError) {
+      setImageError(true);
+    }
+  };
+
   return (
     <div className="min-h-[280px] p-5 pb-12 bg-white rounded-2xl shadow-xl border border-gray-100 relative transition-transform hover:scale-105 hover:shadow-2xl">
       <img
-        src={product.image}
+        src={imageError ? defaultImage : (product.images?.[0] || defaultImage)}
         alt={product.name}
         className="w-32 h-32 object-cover mx-auto rounded-md border border-gray-200 shadow-sm"
+        onError={handleImageError}
       />
       <h3 className="text-lg font-semibold text-gray-900 text-center mt-4 leading-tight">
         {product.name}

@@ -7,9 +7,9 @@ export const addProduct = async (req, res) => {
   try {
     const { name, description, pricePerDay, images, quantity, category, availability } = req.body;
 
-    // Validate required fields
-    if (!name || !description || !pricePerDay || !images || images.length === 0 || !quantity || !category) {
-      return res.status(400).json({ message: "All fields are required, including at least one image." });
+    // Validate required fields (removed images from required fields)
+    if (!name || !description || !pricePerDay || !quantity || !category) {
+      return res.status(400).json({ message: "Name, description, price, quantity, and category are required." });
     }
 
     // Create new product
@@ -17,7 +17,7 @@ export const addProduct = async (req, res) => {
       name,
       description,
       pricePerDay,
-      images,
+      images: images || [], // Make images optional
       quantity,
       category,
       availability: availability ?? true, // Default to true if not provided
@@ -187,6 +187,31 @@ export const searchProducts = async (req, res) => {
       console.error("Error searching products:", error);
       res.status(500).json({ message: "Server error", error });
     }
+};
+
+/**
+ * Delete a product by ID
+ */
+export const deleteProduct = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Find and delete the product
+    const deletedProduct = await Product.findByIdAndDelete(id);
+
+    if (!deletedProduct) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    res.status(200).json({
+      message: "Product deleted successfully",
+      product: deletedProduct,
+    });
+
+  } catch (error) {
+    console.error("Error deleting product:", error);
+    res.status(500).json({ message: "Server error", error });
+  }
 };
 
 

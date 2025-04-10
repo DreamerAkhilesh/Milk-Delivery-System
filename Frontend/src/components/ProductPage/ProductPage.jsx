@@ -1,6 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import axios from "axios";
 import Navbar from "../shared/Navbar";
 import { CategorySection } from "../ProductPage/ProductCard";
+import { USER_API_END_POINT } from "../../utils/constant";
 
 const categoriesData = [
   { id: 1, name: "Milk", icon: "🥛" },
@@ -8,25 +10,40 @@ const categoriesData = [
   { id: 3, name: "Traditional Sweets", icon: "🍮" },
 ];
 
-const productsData = {
-  1: [
-    { id: 1, name: "Cow Milk", description: "Fresh and pure cow milk", image: "path-to-cow-milk.jpg" },
-    { id: 2, name: "Buffalo Milk", description: "High cream buffalo milk", image: "path-to-buffalo-milk.jpg" },
-  ],
-  2: [
-    { id: 3, name: "Paneer", description: "Fresh homemade paneer", image: "path-to-paneer.jpg" },
-    { id: 4, name: "Ghee", description: "Pure desi ghee", image: "path-to-ghee.jpg" },
-    { id: 5, name: "Curd", description: "Thick and creamy curd", image: "path-to-curd.jpg" },
-  ],
-  3: [
-    { id: 6, name: "Rasgulla", description: "Soft and juicy rasgullas", image: "path-to-rasgulla.jpg" },
-    { id: 7, name: "Gulab Jamun", description: "Warm and syrupy delight", image: "path-to-gulab-jamun.jpg" },
-    { id: 8, name: "Kalakand", description: "Milky and rich traditional sweet", image: "path-to-kalakand.jpg" },
-  ],
-};
-
 const ProductPage = () => {
   const [selectedCategory, setSelectedCategory] = useState(1);
+  const [products, setProducts] = useState({});
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  const fetchProducts = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get(`${USER_API_END_POINT}/products`);
+      
+      // Group products by category
+      const groupedProducts = response.data.products.reduce((acc, product) => {
+        const categoryId = categoriesData.find(cat => cat.name === product.category)?.id;
+        if (categoryId) {
+          if (!acc[categoryId]) acc[categoryId] = [];
+          acc[categoryId].push({
+            ...product,
+            id: product._id
+          });
+        }
+        return acc;
+      }, {});
+      
+      setProducts(groupedProducts);
+    } catch (error) {
+      console.error("Error fetching products:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <>
@@ -55,10 +72,14 @@ const ProductPage = () => {
 
         {/* Product Cards Section */}
         <div className="w-3/4 pl-6">
-          <CategorySection
-            category={categoriesData.find((cat) => cat.id === selectedCategory)}
-            products={productsData[selectedCategory] || []}
-          />
+          {loading ? (
+            <div className="text-center">Loading products...</div>
+          ) : (
+            <CategorySection
+              category={categoriesData.find((cat) => cat.id === selectedCategory)}
+              products={products[selectedCategory] || []}
+            />
+          )}
         </div>
       </div>
     </>

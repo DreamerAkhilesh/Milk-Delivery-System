@@ -3,15 +3,21 @@ import { Link } from "react-router-dom";
 import { BadgeCheck, Package, Droplet, Clock } from "lucide-react";
 
 const ProductCard = ({ product }) => {
+  const defaultImage = "/images/default-product.png"; // Update this path
+
   return (
     <Link
       to={`/product/${product.id}`}
       className="block p-4 bg-white rounded-xl shadow-lg hover:shadow-xl transition border border-gray-200"
     >
       <img
-        src={product.image}
+        src={product.images?.[0] || defaultImage}
         alt={product.name}
         className="w-20 h-20 object-cover mx-auto"
+        onError={(e) => {
+          e.target.onerror = null;
+          e.target.src = defaultImage;
+        }}
       />
       <h3 className="text-lg font-semibold text-gray-800 text-center mt-3">
         {product.name}

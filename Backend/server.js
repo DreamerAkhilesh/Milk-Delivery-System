@@ -3,7 +3,9 @@ import dotenv from "dotenv";
 import cors from "cors";
 import connectDB from "./config/db.js";
 import cookieParser from 'cookie-parser';
-
+import userRoutes from "./routers/user_router.js";
+import adminRoutes from "./routers/admin_router.js";
+import productRoutes from "./routers/product_router.js";
 
 // Load environment variables
 dotenv.config();
@@ -32,9 +34,7 @@ app.listen(PORT,()=> {
 
 
 
-import userRoutes from "./routers/user_router.js"; // Import user routes
-import adminRoutes from "./routers/admin_router.js";
-
 // Routes
 app.use("/api/v1/users", userRoutes); // User routes
 app.use("/api/v1/admin", adminRoutes);
+app.use("/api/v1/admin/products", productRoutes);

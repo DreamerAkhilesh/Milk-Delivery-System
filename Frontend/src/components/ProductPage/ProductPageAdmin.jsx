@@ -1,4 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import { ADMIN_API_END_POINT } from "../../utils/constant";
 import Navbar from "../shared/Navbar";
 import AdminProductCard from "./ProductCardAdmin";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -27,7 +29,7 @@ const initialProducts = {
 
 const AdminProductPage = () => {
   const [selectedCategory, setSelectedCategory] = useState(1);
-  const [products, setProducts] = useState(initialProducts);
+  const [products, setProducts] = useState({});
   const [isOpen, setIsOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [newProduct, setNewProduct] = useState({
@@ -40,11 +42,84 @@ const AdminProductPage = () => {
     availability: true,
   });
 
-  const removeProduct = (id) => {
-    setProducts({
-      ...products,
-      [selectedCategory]: products[selectedCategory].filter((product) => product.id !== id),
-    });
+  // Add axios config with authorization
+  const axiosConfig = {
+    headers: {
+      'Authorization': localStorage.getItem('adminToken')
+    }
+  };
+
+  // Fetch products when component mounts
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  const fetchProducts = async () => {
+    try {
+      const response = await axios.get(`${ADMIN_API_END_POINT}/products`, axiosConfig);
+      // Group products by category
+      const groupedProducts = response.data.products.reduce((acc, product) => {
+        const categoryId = categoriesData.find(cat => cat.name === product.category)?.id;
+        if (categoryId) {
+          if (!acc[categoryId]) acc[categoryId] = [];
+          acc[categoryId].push({
+            ...product,
+            id: product._id,
+            image: product.images[0]
+          });
+        }
+        return acc;
+      }, {});
+      setProducts(groupedProducts);
+    } catch (error) {
+      console.error("Error fetching products:", error);
+    }
+  };
+
+  const handleAddOrUpdateProduct = async () => {
+    try {
+      if (editMode) {
+        await axios.put(
+          `${ADMIN_API_END_POINT}/products/${newProduct.id}`,
+          newProduct,
+          axiosConfig
+        );
+      } else {
+        await axios.post(
+          `${ADMIN_API_END_POINT}/products/add`,
+          newProduct,
+          axiosConfig
+        );
+      }
+      
+      // Refresh products list
+      await fetchProducts();
+      
+      setIsOpen(false);
+      setEditMode(false);
+      setNewProduct({
+        name: "",
+        description: "",
+        pricePerDay: "",
+        images: [""],
+        quantity: "",
+        category: "Milk",
+        availability: true,
+      });
+    } catch (error) {
+      console.error("Error saving product:", error);
+      alert(error.response?.data?.message || "Error saving product");
+    }
+  };
+
+  const removeProduct = async (id) => {
+    try {
+      await axios.delete(`${ADMIN_API_END_POINT}/products/${id}`, axiosConfig);
+      await fetchProducts();
+    } catch (error) {
+      console.error("Error deleting product:", error);
+      alert(error.response?.data?.message || "Error deleting product");
+    }
   };
 
   const handleEdit = (product) => {
@@ -64,48 +139,6 @@ const AdminProductPage = () => {
 
   const handleCategoryChange = (value) => {
     setNewProduct((prev) => ({ ...prev, category: value }));
-  };
-
-  const handleAddOrUpdateProduct = () => {
-    const categoryId = categoriesData.find((cat) => cat.name === newProduct.category)?.id;
-
-    if (!categoryId) return;
-
-    if (editMode) {
-      setProducts({
-        ...products,
-        [categoryId]: products[categoryId].map((product) =>
-          product.id === newProduct.id ? { ...newProduct, image: newProduct.images[0] } : product
-        ),
-      });
-    } else {
-      const updated = {
-        ...products,
-        [categoryId]: [
-          ...(products[categoryId] || []),
-          {
-            ...newProduct,
-            id: Date.now(),
-            image: newProduct.images[0] || "default.jpg",
-          },
-        ],
-      };
-      setProducts(updated);
-    }
-
-    setIsOpen(false);
-    setEditMode(false);
-    setNewProduct({
-      name: "",
-      description: "",
-      pricePerDay: "",
-      images: [""],
-      quantity: "",
-      category: "Milk",
-      availability: true,
-    });
-
-    setSelectedCategory(categoryId);
   };
 
   return (

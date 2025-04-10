@@ -14,7 +14,7 @@ function App() {
   return (
     <Routes>
       {/* Public Routes */}
-      <Route path="/" element={<Navigate to="/admin/login" />} />
+      <Route path="/" element={<Navigate to="/home" />} />
       
       {/* Admin Routes */}
       <Route path="/admin" element={<Dashboard />} />
