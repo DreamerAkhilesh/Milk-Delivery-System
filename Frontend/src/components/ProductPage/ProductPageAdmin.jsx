@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 const categoriesData = [
   { id: 1, name: "Milk", icon: "🥛" },
@@ -41,6 +42,8 @@ const AdminProductPage = () => {
     category: "Milk",
     availability: true,
   });
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
 
   // Add axios config with authorization
   const axiosConfig = {
@@ -76,27 +79,65 @@ const AdminProductPage = () => {
     }
   };
 
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setImageFile(file);
+      // Create preview URL
+      const previewUrl = URL.createObjectURL(file);
+      setImagePreview(previewUrl);
+      
+      // Update newProduct state with the preview URL
+      setNewProduct(prev => ({
+        ...prev,
+        images: [previewUrl]
+      }));
+    }
+  };
+
   const handleAddOrUpdateProduct = async () => {
     try {
+      const formData = new FormData();
+      formData.append('name', newProduct.name);
+      formData.append('description', newProduct.description);
+      formData.append('pricePerDay', newProduct.pricePerDay);
+      formData.append('quantity', newProduct.quantity);
+      formData.append('category', newProduct.category);
+      formData.append('availability', newProduct.availability);
+      
+      if (imageFile) {
+        formData.append('productImage', imageFile);
+      }
+
+      const config = {
+        headers: {
+          'Authorization': localStorage.getItem('adminToken'),
+          'Content-Type': 'multipart/form-data'
+        }
+      };
+
       if (editMode) {
         await axios.put(
           `${ADMIN_API_END_POINT}/products/${newProduct.id}`,
-          newProduct,
-          axiosConfig
+          formData,
+          config
         );
       } else {
         await axios.post(
           `${ADMIN_API_END_POINT}/products/add`,
-          newProduct,
-          axiosConfig
+          formData,
+          config
         );
       }
-      
+
       // Refresh products list
       await fetchProducts();
       
+      // Reset form
       setIsOpen(false);
       setEditMode(false);
+      setImageFile(null);
+      setImagePreview(null);
       setNewProduct({
         name: "",
         description: "",
@@ -106,9 +147,11 @@ const AdminProductPage = () => {
         category: "Milk",
         availability: true,
       });
+
+      toast.success(`Product ${editMode ? 'updated' : 'added'} successfully`);
     } catch (error) {
       console.error("Error saving product:", error);
-      alert(error.response?.data?.message || "Error saving product");
+      toast.error(error.response?.data?.message || "Error saving product");
     }
   };
 
@@ -197,7 +240,27 @@ const AdminProductPage = () => {
                   <Textarea name="description" value={newProduct.description} onChange={handleFormChange} placeholder="Description" />
                   <Input name="pricePerDay" type="number" value={newProduct.pricePerDay} onChange={handleFormChange} placeholder="Price Per Day" />
                   <Input name="quantity" value={newProduct.quantity} onChange={handleFormChange} placeholder="Quantity" />
-                  <Input name="images" value={newProduct.images[0]} onChange={(e) => setNewProduct((prev) => ({ ...prev, images: [e.target.value] }))} placeholder="Image URL" />
+                  
+                  {/* Image upload section */}
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700">Product Image</label>
+                    <Input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageChange}
+                      className="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-violet-50 file:text-violet-700 hover:file:bg-violet-100"
+                    />
+                    {imagePreview && (
+                      <div className="mt-2">
+                        <img
+                          src={imagePreview}
+                          alt="Preview"
+                          className="w-32 h-32 object-cover rounded-md"
+                        />
+                      </div>
+                    )}
+                  </div>
+
                   <Select value={newProduct.category} onValueChange={handleCategoryChange}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select Category" />

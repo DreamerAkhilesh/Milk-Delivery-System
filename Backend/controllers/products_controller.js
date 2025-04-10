@@ -5,22 +5,25 @@ import Product from "../models/product_model.js";
  */
 export const addProduct = async (req, res) => {
   try {
-    const { name, description, pricePerDay, images, quantity, category, availability } = req.body;
+    const { name, description, pricePerDay, quantity, category, availability } = req.body;
 
-    // Validate required fields (removed images from required fields)
+    // Validate required fields
     if (!name || !description || !pricePerDay || !quantity || !category) {
       return res.status(400).json({ message: "Name, description, price, quantity, and category are required." });
     }
+
+    // Create image path if file was uploaded
+    const imagePath = req.file ? `/src/assets/products/${req.file.filename}` : null;
 
     // Create new product
     const newProduct = new Product({
       name,
       description,
       pricePerDay,
-      images: images || [], // Make images optional
+      images: imagePath ? [imagePath] : [], // Store the relative path
       quantity,
       category,
-      availability: availability ?? true, // Default to true if not provided
+      availability: availability ?? true,
     });
 
     // Save product to database
@@ -53,11 +56,18 @@ export const getAllProducts = async (req, res) => {
       if (maxPrice) query.pricePerDay.$lte = parseFloat(maxPrice);
     }
     if (availability !== undefined) {
-      query.availability = availability === "true"; // Convert string to boolean
+      query.availability = availability === "true";
     }
 
     // Fetch products based on filters
     const products = await Product.find(query);
+
+    if (!products || products.length === 0) {
+      return res.status(200).json({
+        message: "No products found",
+        products: []
+      });
+    }
 
     res.status(200).json({
       message: "Products retrieved successfully",
@@ -67,7 +77,10 @@ export const getAllProducts = async (req, res) => {
 
   } catch (error) {
     console.error("Error fetching products:", error);
-    res.status(500).json({ message: "Server error", error });
+    res.status(500).json({ 
+      message: "Failed to fetch products", 
+      error: error.message 
+    });
   }
 };
 
@@ -105,12 +118,16 @@ export const getProductById = async (req, res) => {
 export const updateProduct = async (req, res) => {
     try {
       const { id } = req.params;
-      const updateData = req.body;
+      const updateData = { ...req.body };
   
-      // Find and update product
+      // If new file is uploaded, update the image path
+      if (req.file) {
+        updateData.images = [`/src/assets/products/${req.file.filename}`];
+      }
+  
       const updatedProduct = await Product.findByIdAndUpdate(id, updateData, {
-        new: true, // Returns updated document
-        runValidators: true, // Ensures validation rules apply
+        new: true,
+        runValidators: true,
       });
   
       if (!updatedProduct) {

@@ -9,27 +9,31 @@ import AdminProductPage from './components/ProductPage/ProductPageAdmin';
 import UserManagement from './components/UserManagement/UserManagement';
 import AdminLogin from './components/auth/AdminLogin';
 import AdminRegister from './components/auth/AdminRegister';
+import { Toaster } from "sonner";
 
 function App() {
   return (
-    <Routes>
-      {/* Public Routes */}
-      <Route path="/" element={<Navigate to="/home" />} />
-      
-      {/* Admin Routes */}
-      <Route path="/admin" element={<Dashboard />} />
-      <Route path="/admin/login" element={<AdminLogin />} />
-      <Route path="/admin/register" element={<AdminRegister />} />
-      <Route path="/admin/products" element={<AdminProductPage />} />
-      <Route path="/admin/users" element={<UserManagement />} />
-      
-      {/* User Routes */}
-      <Route path="/home" element={<Home />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/signup" element={<Signup />} />
-      <Route path="/profile" element={<Profile />} />
-      <Route path="/products" element={<ProductPage />} />
-    </Routes>
+    <>
+      <Toaster position="top-center" richColors />
+      <Routes>
+        {/* Public Routes */}
+        <Route path="/" element={<Navigate to="/home" />} />
+        
+        {/* Admin Routes */}
+        <Route path="/admin" element={<Dashboard />} />
+        <Route path="/admin/login" element={<AdminLogin />} />
+        <Route path="/admin/register" element={<AdminRegister />} />
+        <Route path="/admin/products" element={<AdminProductPage />} />
+        <Route path="/admin/users" element={<UserManagement />} />
+        
+        {/* User Routes */}
+        <Route path="/home" element={<Home />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
+        <Route path="/profile" element={<Profile />} />
+        <Route path="/products" element={<ProductPage />} />
+      </Routes>
+    </>
   );
 }
 

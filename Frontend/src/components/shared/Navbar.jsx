@@ -5,7 +5,7 @@ import { Menu, X, LogOut, User2 } from "lucide-react";
 import axios from "axios";
 import { logoutUser } from "@/redux/authSlice";
 import { toast } from "sonner";
-import { Avatar, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { USER_API_END_POINT, ADMIN_API_END_POINT } from "../../utils/constant";
 import {
@@ -56,6 +56,41 @@ const Navbar = () => {
       }
       navigate("/home");
     }
+  };
+
+  const renderPopoverContent = () => {
+    return (
+      <PopoverContent className="w-64">
+        <div className="flex items-center space-x-3 p-2">
+          <Avatar>
+            <AvatarImage
+              src={user?.profile?.profilePhoto}
+              alt="Profile"
+            />
+            <AvatarFallback className="bg-gray-200">
+              <User2 className="h-5 w-5 text-gray-600" />
+            </AvatarFallback>
+          </Avatar>
+          <span className="font-medium text-gray-700">{user?.name || "User"}</span>
+        </div>
+        <div className="mt-4 text-gray-600">
+          {user?.role !== "admin" && (
+            <div className="flex items-center gap-2 cursor-pointer hover:bg-gray-100 p-2 rounded-md">
+              <User2 className="h-5 w-5" />
+              <Link to="/profile" className="flex-grow no-underline text-gray-600 hover:text-gray-900">
+                My Profile
+              </Link>
+            </div>
+          )}
+          <div className="flex items-center gap-2 cursor-pointer hover:bg-gray-100 p-2 rounded-md">
+            <LogOut className="h-5 w-5" />
+            <button onClick={logoutHandler} className="flex-grow text-left text-gray-600 hover:text-gray-900 bg-transparent border-none p-0 m-0 cursor-pointer">
+              Logout
+            </button>
+          </div>
+        </div>
+      </PopoverContent>
+    );
   };
 
   return (
@@ -156,49 +191,15 @@ const Navbar = () => {
                 <PopoverTrigger asChild>
                   <Avatar className="cursor-pointer">
                     <AvatarImage
-                      src={
-                        user?.profile?.profilePhoto ||
-                        "https://via.placeholder.com/150"
-                      }
+                      src={user?.profile?.profilePhoto}
                       alt="Profile"
                     />
+                    <AvatarFallback className="bg-gray-200">
+                      <User2 className="h-5 w-5 text-gray-600" />
+                    </AvatarFallback>
                   </Avatar>
                 </PopoverTrigger>
-                <PopoverContent className="w-64">
-                  <div className="flex items-center space-x-3">
-                    <Avatar>
-                      <AvatarImage
-                        src={
-                          user?.profile?.profilePhoto ||
-                          "https://via.placeholder.com/150"
-                        }
-                        alt="Profile"
-                      />
-                    </Avatar>
-                    <div>
-                      <h4 className="font-medium">{user?.fullName}</h4>
-                      <p className="text-sm text-gray-500">
-                        {user?.profile?.bio}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="mt-4 text-gray-600">
-                    {user.role === "Student" && (
-                      <div className="flex items-center gap-2 cursor-pointer">
-                        <User2 />
-                        <Link to="/profile">
-                          <Button variant="link">View Profile</Button>
-                        </Link>
-                      </div>
-                    )}
-                    <div className="flex items-center gap-2 cursor-pointer">
-                      <LogOut />
-                      <Button onClick={logoutHandler} variant="link">
-                        Logout
-                      </Button>
-                    </div>
-                  </div>
-                </PopoverContent>
+                {renderPopoverContent()}
               </Popover>
             )}
           </div>
