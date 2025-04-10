@@ -1,9 +1,20 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { BadgeCheck, Package, Droplet, Clock } from "lucide-react";
 
 const ProductCard = ({ product }) => {
-  const defaultImage = "/images/default-product.png"; // Update this path
+  const [imageError, setImageError] = useState(false);
+  // Use an absolute path from the public folder
+  const defaultImage = "/images/default-product.png";
+
+  const handleImageError = () => {
+    if (!imageError) {
+      setImageError(true);
+    }
+  };
+
+  // Determine the image source only once
+  const imageSource = imageError ? defaultImage : (product.images?.[0] || product.image || defaultImage);
 
   return (
     <Link
@@ -11,13 +22,10 @@ const ProductCard = ({ product }) => {
       className="block p-4 bg-white rounded-xl shadow-lg hover:shadow-xl transition border border-gray-200"
     >
       <img
-        src={product.images?.[0] || defaultImage}
+        src={imageSource}
         alt={product.name}
         className="w-20 h-20 object-cover mx-auto"
-        onError={(e) => {
-          e.target.onerror = null;
-          e.target.src = defaultImage;
-        }}
+        onError={handleImageError}
       />
       <h3 className="text-lg font-semibold text-gray-800 text-center mt-3">
         {product.name}

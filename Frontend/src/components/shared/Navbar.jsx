@@ -3,10 +3,11 @@ import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { Menu, X, LogOut, User2 } from "lucide-react";
 import axios from "axios";
-import { setUser } from "@/redux/authSlice";
+import { logoutUser } from "@/redux/authSlice";
 import { toast } from "sonner";
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { USER_API_END_POINT, ADMIN_API_END_POINT } from "../../utils/constant";
 import {
   Popover,
   PopoverTrigger,
@@ -21,17 +22,39 @@ const Navbar = () => {
 
   const logoutHandler = async () => {
     try {
-      const res = await axios.get(`${USER_API_END_POINT}/logout`, {
+      const apiEndpoint = user?.role === "admin" ? ADMIN_API_END_POINT : USER_API_END_POINT;
+      
+      const res = await axios.get(`${apiEndpoint}/logout`, {
         withCredentials: true,
+        headers: {
+          Authorization: user?.role === "admin" ? 
+            localStorage.getItem("adminToken") : 
+            localStorage.getItem("token")
+        }
       });
-      if (res.data.success) {
-        dispatch(setUser(null));
-        navigate("/");
-        toast.success(res.data.message);
+
+      if (user?.role === "admin") {
+        localStorage.removeItem("adminToken");
+      } else {
+        localStorage.removeItem("token");
       }
+
+      dispatch(logoutUser());
+
+      navigate("/home");
+
+      toast.success(res.data.message || "Logged out successfully");
     } catch (error) {
-      console.log(error);
+      console.error("Logout error:", error);
       toast.error(error.response?.data?.message || "Logout failed");
+      
+      dispatch(logoutUser());
+      if (user?.role === "admin") {
+        localStorage.removeItem("adminToken");
+      } else {
+        localStorage.removeItem("token");
+      }
+      navigate("/home");
     }
   };
 

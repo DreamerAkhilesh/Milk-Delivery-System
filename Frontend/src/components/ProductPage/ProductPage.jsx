@@ -3,6 +3,7 @@ import axios from "axios";
 import Navbar from "../shared/Navbar";
 import { CategorySection } from "../ProductPage/ProductCard";
 import { USER_API_END_POINT } from "../../utils/constant";
+import { toast } from "sonner";
 
 const categoriesData = [
   { id: 1, name: "Milk", icon: "🥛" },
@@ -24,14 +25,16 @@ const ProductPage = () => {
       setLoading(true);
       const response = await axios.get(`${USER_API_END_POINT}/products`);
       
-      // Group products by category
+      // Group products by category with proper image handling
       const groupedProducts = response.data.products.reduce((acc, product) => {
         const categoryId = categoriesData.find(cat => cat.name === product.category)?.id;
         if (categoryId) {
           if (!acc[categoryId]) acc[categoryId] = [];
+          // Ensure we're passing the entire images array
           acc[categoryId].push({
             ...product,
-            id: product._id
+            id: product._id,
+            images: product.images || [], // Keep the entire images array
           });
         }
         return acc;
@@ -40,6 +43,7 @@ const ProductPage = () => {
       setProducts(groupedProducts);
     } catch (error) {
       console.error("Error fetching products:", error);
+      toast.error("Failed to load products");
     } finally {
       setLoading(false);
     }
