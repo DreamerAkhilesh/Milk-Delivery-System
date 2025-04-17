@@ -1,79 +1,142 @@
-import React from "react";
-import { FaFacebookF, FaInstagram, FaLinkedinIn, FaYoutube } from "react-icons/fa";
-import { Link } from "react-router-dom";
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { Facebook, Twitter, Instagram, Mail, Phone, User, Package, ShoppingCart, Lock } from 'lucide-react';
+import { useSelector } from 'react-redux';
+import logo from '../../assets/logo1.png';
 
-export default function Footer() {
+const Footer = () => {
+  const { user } = useSelector((state) => state.auth);
+
   return (
-    <footer className="bg-gray-100 text-gray-700 p-8">
-      <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8">
-        {/* Milk & Dairy Products */}
-        <div>
-          <h2 className="font-semibold text-lg mb-3">Milk & Dairy Products</h2>
-          <ul className="space-y-2">
-            <li>Cow Milk</li>
-            <li>Buffalo Milk</li>
-            <li>Butter</li>
-            <li>Ghee</li>
-            <li>Cheese</li>
-            <li>Dahi</li>
-            <li>Paneer</li>
-            <li>Lassi</li>
-            <li>Yogurt</li>
-            <li>Ice Cream</li>
-          </ul>
-        </div>
-
-        {/* Company Info */}
-        <div>
-          <h2 className="font-semibold text-lg mb-3">Company</h2>
-          <ul className="space-y-2">
-            <li>About Us</li>
-            <li>How Can We Help</li>
-            <li>Privacy</li>
-            <li>FAQs</li>
-            <li>Terms & Conditions</li>
-            <li>Divya Dairy Reviews</li>
-          </ul>
-        </div>
-
-        {/* Social & Download */}
-        <div>
-          <h2 className="font-semibold text-lg mb-3">Connect With Us</h2>
-          <div className="flex space-x-4 text-gray-700 text-2xl">
-            <FaFacebookF />
-            <FaInstagram />
-            <FaLinkedinIn />
-            <FaYoutube />
-          </div>
-          <div className="mt-6">
-            <h2 className="font-semibold text-lg mb-3">Download App</h2>
+    <footer className="bg-white border-t border-gray-100">
+      <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {/* Company Info */}
+          <div className="space-y-4">
+            <div className="flex items-center space-x-2">
+              <img src={logo} alt="Milk Delivery Logo" className="h-8 w-auto" />
+              <h3 className="text-lg font-semibold text-[#00B86C]">
+                Milk Delivery
+              </h3>
+            </div>
+            <p className="text-gray-500 text-sm leading-relaxed">
+              Fresh dairy products delivered to your doorstep every morning. Quality you can trust.
+            </p>
             <div className="flex space-x-4">
-              <img src="../src/assets/logo1.png" alt="Google Play" className="w-32" />
-              <img src="../src/assets/logo1.png" alt="App Store" className="w-32" />
+              <a href="#" className="text-gray-400 hover:text-[#00B86C] transition-colors">
+                <Facebook size={18} />
+              </a>
+              <a href="#" className="text-gray-400 hover:text-[#00B86C] transition-colors">
+                <Twitter size={18} />
+              </a>
+              <a href="#" className="text-gray-400 hover:text-[#00B86C] transition-colors">
+                <Instagram size={18} />
+              </a>
             </div>
           </div>
+
+          {/* Quick Links */}
+          <div className="flex flex-col">
+            <h3 className="text-sm font-semibold text-[#00B86C] mb-4 uppercase tracking-wider">
+              Quick Links
+            </h3>
+            <ul className="space-y-2">
+              <li>
+                <Link to="/" className="text-gray-500 hover:text-[#00B86C] text-sm transition-colors">
+                  Home
+                </Link>
+              </li>
+              <li>
+                <Link to="/products" className="text-gray-500 hover:text-[#00B86C] text-sm transition-colors">
+                  Products
+                </Link>
+              </li>
+              <li>
+                <Link to="/about" className="text-gray-500 hover:text-[#00B86C] text-sm transition-colors">
+                  About Us
+                </Link>
+              </li>
+              <li>
+                <Link to="/contact" className="text-gray-500 hover:text-[#00B86C] text-sm transition-colors">
+                  Contact
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          {/* Conditional Section */}
+          {user ? (
+            <div className="flex flex-col">
+              <h3 className="text-sm font-semibold text-[#00B86C] mb-4 uppercase tracking-wider">
+                My Account
+              </h3>
+              <ul className="space-y-3">
+                <li className="flex items-center space-x-2">
+                  <div className="p-1.5 bg-[#00B86C]/5 rounded">
+                    <User size={16} className="text-[#00B86C]" />
+                  </div>
+                  <Link to="/profile" className="text-gray-500 hover:text-[#00B86C] text-sm transition-colors">
+                    My Profile
+                  </Link>
+                </li>
+                <li className="flex items-center space-x-2">
+                  <div className="p-1.5 bg-[#00B86C]/5 rounded">
+                    <Package size={16} className="text-[#00B86C]" />
+                  </div>
+                  <Link to="/subscriptions" className="text-gray-500 hover:text-[#00B86C] text-sm transition-colors">
+                    My Subscriptions
+                  </Link>
+                </li>
+                <li className="flex items-center space-x-2">
+                  <div className="p-1.5 bg-[#00B86C]/5 rounded">
+                    <ShoppingCart size={16} className="text-[#00B86C]" />
+                  </div>
+                  <Link to="/orders" className="text-gray-500 hover:text-[#00B86C] text-sm transition-colors">
+                    My Orders
+                  </Link>
+                </li>
+              </ul>
+            </div>
+          ) : (
+            <div className="flex flex-col">
+              <h3 className="text-sm font-semibold text-[#00B86C] mb-4 uppercase tracking-wider">
+                Admin Access
+              </h3>
+              <ul className="space-y-3">
+                <li className="flex items-center space-x-2">
+                  <div className="p-1.5 bg-[#00B86C]/5 rounded">
+                    <Lock size={16} className="text-[#00B86C]" />
+                  </div>
+                  <Link to="/admin/login" className="text-gray-500 hover:text-[#00B86C] text-sm transition-colors">
+                    Admin Login
+                  </Link>
+                </li>
+                <li className="flex items-center space-x-2">
+                  <div className="p-1.5 bg-[#00B86C]/5 rounded">
+                    <Mail size={16} className="text-[#00B86C]" />
+                  </div>
+                  <span className="text-gray-500 text-sm">support@milkdelivery.com</span>
+                </li>
+                <li className="flex items-center space-x-2">
+                  <div className="p-1.5 bg-[#00B86C]/5 rounded">
+                    <Phone size={16} className="text-[#00B86C]" />
+                  </div>
+                  <span className="text-gray-500 text-sm">+91 1234567890</span>
+                </li>
+              </ul>
+            </div>
+          )}
         </div>
 
-        {/* Admin Section */}
-        <div>
-          <h2 className="font-semibold text-lg mb-3">Admin</h2>
-          <ul className="space-y-2">
-            <li>
-              <Link
-                to="/admin/login"
-                className="text-blue-600 hover:underline hover:text-blue-800"
-              >
-                Admin Login
-              </Link>
-            </li>
-          </ul>
+        {/* Copyright */}
+        <div className="mt-8 pt-6 border-t border-gray-100">
+          <p className="text-center text-gray-400 text-xs">
+            © {new Date().getFullYear()} Milk Delivery. All rights reserved.
+          </p>
         </div>
-      </div>
-
-      {/* Footer Note */}
-      <div className="mt-8 text-sm text-gray-500 border-t pt-4">
-        "Divya Dairy" is owned & managed by Divya Dairy Pvt. Ltd. Images and videos are for representation purposes; actual products may vary. Product availability is subject to location and stock changes. Price, Offers, Discounts and Festival combos are subject to product availability, location. Price and other benefits might fluctuate. The product related information is provided for general informational and educational purposes only and is not a substitute for professional advice. Check the product label for batch, manufacturing details, and other info before use. For further information, reach out to Divya Dairy customer service.
       </div>
     </footer>
   );
-}
+};
+
+export default Footer;

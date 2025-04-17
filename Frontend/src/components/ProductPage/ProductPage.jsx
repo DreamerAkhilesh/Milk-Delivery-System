@@ -76,7 +76,7 @@ const ProductPage = () => {
   if (error) {
     return (
       <>
-        <Navbar />
+        
         <div className="container mx-auto p-6">
           <div className="text-center text-red-600 p-4 bg-red-100 rounded-lg">
             <h2 className="text-lg font-semibold mb-2">Error Loading Products</h2>

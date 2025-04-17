@@ -3,24 +3,31 @@ import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { Menu, X, LogOut, User2 } from "lucide-react";
 import axios from "axios";
-import { logoutUser } from "@/redux/authSlice";
+import { logoutUser } from "../../redux/authSlice";
 import { toast } from "sonner";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
+import { Avatar, AvatarImage, AvatarFallback } from "../ui/avatar";
+import { Button } from "../ui/button";
 import { USER_API_END_POINT, ADMIN_API_END_POINT } from "../../utils/constant";
 import {
   Popover,
   PopoverTrigger,
   PopoverContent,
-} from "@/components/ui/popover";
+} from "../ui/popover";
+import { useCart } from '../../context/CartContext';
+import CartSidebar from '../Cart/CartSidebar';
+import logo from '../../assets/logo1.png';
 
 const Navbar = () => {
-  const [isOpen, setIsOpen] = useState(false);
-  const { user } = useSelector((store) => store.auth);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isCartOpen, setIsCartOpen] = useState(false);
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const { user } = useSelector((state) => state.auth);
+  const { cart } = useCart();
 
-  const logoutHandler = async () => {
+  const totalItems = cart.reduce((total, item) => total + item.quantity, 0);
+
+  const handleLogout = async () => {
     try {
       const apiEndpoint = user?.role === "admin" ? ADMIN_API_END_POINT : USER_API_END_POINT;
       
@@ -40,9 +47,7 @@ const Navbar = () => {
       }
 
       dispatch(logoutUser());
-
       navigate("/home");
-
       toast.success(res.data.message || "Logged out successfully");
     } catch (error) {
       console.error("Logout error:", error);
@@ -84,7 +89,7 @@ const Navbar = () => {
           )}
           <div className="flex items-center gap-2 cursor-pointer hover:bg-gray-100 p-2 rounded-md">
             <LogOut className="h-5 w-5" />
-            <button onClick={logoutHandler} className="flex-grow text-left text-gray-600 hover:text-gray-900 bg-transparent border-none p-0 m-0 cursor-pointer">
+            <button onClick={handleLogout} className="flex-grow text-left text-gray-600 hover:text-gray-900 bg-transparent border-none p-0 m-0 cursor-pointer">
               Logout
             </button>
           </div>
@@ -94,221 +99,185 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="bg-white shadow-md p-4 relative">
-      <div className="container mx-auto flex justify-between items-center">
-        {/* Logo */}
-        <Link to="/">
-          <img src="../src/assets/logo1.png" alt="Logo" className="h-12" />
-        </Link>
+    <nav className="bg-white shadow-md">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between h-16">
+          <div className="flex">
+            <div className="flex-shrink-0 flex items-center">
+              <Link to="/" className="flex items-center">
+                <img
+                  src={logo}
+                  alt="Milk Delivery Logo"
+                  className="h-12 w-auto"
+                />
+              </Link>
+            </div>
+          </div>
 
-        {/* Desktop Menu */}
-        <div className="hidden md:flex items-center space-x-6 ml-auto">
-          <ul className="flex space-x-6 text-gray-700">
-            {user?.role === "admin" ? (
-              <>
-                <li>
-                  <Link
-                    to="/admin/products"
-                    className="hover:text-[#8CE0FC] cursor-pointer"
-                  >
-                    Products
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    to="/admin/users"
-                    className="hover:text-[#8CE0FC] cursor-pointer"
-                  >
-                    Users
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    to="/admin/subscriptions"
-                    className="hover:text-[#8CE0FC] cursor-pointer"
-                  >
-                    Subscriptions
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    to="/admin/transactions"
-                    className="hover:text-[#8CE0FC] cursor-pointer"
-                  >
-                    Transactions
-                  </Link>
-                </li>
-              </>
-            ) : (
-              <>
-                <li>
-                  <Link to="/" className="hover:text-[#8CE0FC] cursor-pointer">
-                    Home
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    to="/products"
-                    className="hover:text-[#8CE0FC] cursor-pointer"
-                  >
-                    Products
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    to="/about"
-                    className="hover:text-[#8CE0FC] cursor-pointer"
-                  >
-                    About Us
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    to="/contact"
-                    className="hover:text-[#8CE0FC] cursor-pointer"
-                  >
-                    Contact
-                  </Link>
-                </li>
-              </>
+          {/* Desktop Navigation */}
+          <div className="hidden md:flex items-center space-x-8">
+            <Link to="/" className="text-gray-600 hover:text-[#49BDE9]">
+              Home
+            </Link>
+            <Link to="/products" className="text-gray-600 hover:text-[#49BDE9]">
+              Products
+            </Link>
+            <Link to="/about" className="text-gray-600 hover:text-[#49BDE9]">
+              About
+            </Link>
+            <Link to="/contact" className="text-gray-600 hover:text-[#49BDE9]">
+              Contact
+            </Link>
+            
+            {/* Cart Icon - Only show for logged-in users with user role */}
+            {user && user.role !== "admin" && (
+              <button
+                onClick={() => setIsCartOpen(true)}
+                className="relative text-gray-600 hover:text-[#49BDE9]"
+              >
+                <svg
+                  className="h-6 w-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
+                  />
+                </svg>
+                {totalItems > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-[#49BDE9] text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                    {totalItems}
+                  </span>
+                )}
+              </button>
             )}
-          </ul>
 
-          <div className="ml-6 flex items-center space-x-4">
-            {!user ? (
-              <div className="flex space-x-3">
-                <Link to="/login">
-                  <Button variant="outline">Login</Button>
-                </Link>
-                <Link to="/signup">
-                  <Button className="bg-blue-600 text-white hover:bg-[#8CE0FC]">
-                    Signup
-                  </Button>
-                </Link>
+            {/* Auth Buttons */}
+            {user ? (
+              <div className="flex items-center space-x-4">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Avatar className="cursor-pointer h-8 w-8">
+                      <AvatarImage
+                        src={user?.profile?.profilePhoto}
+                        alt="Profile"
+                      />
+                      <AvatarFallback className="bg-gray-200">
+                        <User2 className="h-4 w-4 text-gray-600" />
+                      </AvatarFallback>
+                    </Avatar>
+                  </PopoverTrigger>
+                  {renderPopoverContent()}
+                </Popover>
               </div>
             ) : (
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Avatar className="cursor-pointer">
-                    <AvatarImage
-                      src={user?.profile?.profilePhoto}
-                      alt="Profile"
-                    />
-                    <AvatarFallback className="bg-gray-200">
-                      <User2 className="h-5 w-5 text-gray-600" />
-                    </AvatarFallback>
-                  </Avatar>
-                </PopoverTrigger>
-                {renderPopoverContent()}
-              </Popover>
+              <div className="flex items-center space-x-4">
+                <Link
+                  to="/login"
+                  className="text-gray-600 hover:text-[#49BDE9] px-3 py-2"
+                >
+                  Login
+                </Link>
+                <Link
+                  to="/signup"
+                  className="bg-[#49BDE9] text-white px-4 py-2 rounded-md hover:bg-[#3A9BC7]"
+                >
+                  Sign Up
+                </Link>
+              </div>
+            )}
+          </div>
+
+          {/* Mobile menu button */}
+          <div className="md:hidden flex items-center">
+            <button
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              className="text-gray-600 hover:text-[#49BDE9]"
+            >
+              {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile Navigation */}
+      {isMenuOpen && (
+        <div className="md:hidden">
+          <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+            <Link
+              to="/"
+              className="block px-3 py-2 text-gray-600 hover:text-[#49BDE9]"
+            >
+              Home
+            </Link>
+            <Link
+              to="/products"
+              className="block px-3 py-2 text-gray-600 hover:text-[#49BDE9]"
+            >
+              Products
+            </Link>
+            <Link
+              to="/about"
+              className="block px-3 py-2 text-gray-600 hover:text-[#49BDE9]"
+            >
+              About
+            </Link>
+            <Link
+              to="/contact"
+              className="block px-3 py-2 text-gray-600 hover:text-[#49BDE9]"
+            >
+              Contact
+            </Link>
+            {/* Cart in mobile menu - Only show for logged-in users with user role */}
+            {user && user.role !== "admin" && (
+              <button
+                onClick={() => setIsCartOpen(true)}
+                className="block w-full text-left px-3 py-2 text-gray-600 hover:text-[#49BDE9]"
+              >
+                Cart ({totalItems})
+              </button>
+            )}
+            {user ? (
+              <>
+                <Link
+                  to="/profile"
+                  className="block px-3 py-2 text-gray-600 hover:text-[#49BDE9]"
+                >
+                  Profile
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="block w-full text-left px-3 py-2 text-gray-600 hover:text-[#49BDE9]"
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              <>
+                <Link
+                  to="/login"
+                  className="block px-3 py-2 text-gray-600 hover:text-[#49BDE9]"
+                >
+                  Login
+                </Link>
+                <Link
+                  to="/signup"
+                  className="block px-3 py-2 text-gray-600 hover:text-[#49BDE9]"
+                >
+                  Sign Up
+                </Link>
+              </>
             )}
           </div>
         </div>
-
-        {/* Mobile Menu Button */}
-        <button className="md:hidden z-50" onClick={() => setIsOpen(!isOpen)}>
-          {isOpen ? <X size={28} /> : <Menu size={28} />}
-        </button>
-      </div>
-
-      {/* Mobile Menu Drawer */}
-      {isOpen && (
-        <div className="absolute top-full left-0 w-full bg-white shadow-md z-40 p-6 flex flex-col items-center space-y-4 md:hidden">
-          {user?.role === "admin" ? (
-            <>
-              <Link
-                to="/admin/products"
-                onClick={() => setIsOpen(false)}
-                className="hover:text-[#8CE0FC]"
-              >
-                Products
-              </Link>
-              <Link
-                to="/admin/users"
-                onClick={() => setIsOpen(false)}
-                className="hover:text-[#8CE0FC]"
-              >
-                Users
-              </Link>
-              <Link
-                to="/admin/subscriptions"
-                onClick={() => setIsOpen(false)}
-                className="hover:text-[#8CE0FC]"
-              >
-                Subscriptions
-              </Link>
-              <Link
-                to="/admin/transactions"
-                onClick={() => setIsOpen(false)}
-                className="hover:text-[#8CE0FC]"
-              >
-                Transactions
-              </Link>
-            </>
-          ) : (
-            <>
-              <Link
-                to="/"
-                onClick={() => setIsOpen(false)}
-                className="hover:text-[#8CE0FC]"
-              >
-                Home
-              </Link>
-              <Link
-                to="/products"
-                onClick={() => setIsOpen(false)}
-                className="hover:text-[#8CE0FC]"
-              >
-                Products
-              </Link>
-              <Link
-                to="/about"
-                onClick={() => setIsOpen(false)}
-                className="hover:text-[#8CE0FC]"
-              >
-                About Us
-              </Link>
-              <Link
-                to="/contact"
-                onClick={() => setIsOpen(false)}
-                className="hover:text-[#8CE0FC]"
-              >
-                Contact
-              </Link>
-            </>
-          )}
-
-          {!user ? (
-            <div className="flex flex-col space-y-2 w-full">
-              <Link
-                to="/login"
-                className="w-full text-center border rounded-lg py-2 hover:text-[#8CE0FC]"
-                onClick={() => setIsOpen(false)}
-              >
-                Login
-              </Link>
-              <Link
-                to="/signup"
-                className="w-full text-center bg-blue-600 text-white rounded-lg py-2 hover:bg-[#8CE0FC]"
-                onClick={() => setIsOpen(false)}
-              >
-                Signup
-              </Link>
-            </div>
-          ) : (
-            <button
-              onClick={() => {
-                logoutHandler();
-                setIsOpen(false);
-              }}
-              className="flex items-center gap-2 hover:text-[#8CE0FC]"
-            >
-              <LogOut />
-              Logout
-            </button>
-          )}
-        </div>
       )}
+
+      {/* Cart Sidebar */}
+      <CartSidebar isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
     </nav>
   );
 };

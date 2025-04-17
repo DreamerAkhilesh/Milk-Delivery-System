@@ -1,6 +1,6 @@
 import React from 'react'
 import { useSelector } from 'react-redux'
-import { Navigate } from 'react-router-dom'
+import { Navigate, Link } from 'react-router-dom'
 import Navbar from '../shared/Navbar'
 import Footer from '../shared/Footer'
 import CurrentDelivery from './CurrentDeliveries'
@@ -27,6 +27,14 @@ const Dashboard = () => {
         <CurrentDelivery />
       </div>
       <Footer />
+      <nav>
+        <Link
+          to="/admin/chat"
+          className="hover:text-[#8CE0FC] cursor-pointer"
+        >
+          Live Chat
+        </Link>
+      </nav>
     </div>
   )
 }
