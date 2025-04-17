@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 
-# Use npm explicitly to avoid bun issues
+# Install dependencies
 npm install
+
+# Build the project
 npm run build
+
+# Ensure proper permissions
+chmod -R 755 dist/
