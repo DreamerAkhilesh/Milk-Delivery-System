@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { ADMIN_API_END_POINT } from "../../utils/constant";
+import { ADMIN_PRODUCTS_API_END_POINT } from "../../utils/constant";
 import Navbar from "../shared/Navbar";
 import AdminProductCard from "./ProductCardAdmin";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -45,13 +45,6 @@ const AdminProductPage = () => {
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
 
-  // Add axios config with authorization
-  const axiosConfig = {
-    headers: {
-      'Authorization': localStorage.getItem('adminToken')
-    }
-  };
-
   // Fetch products when component mounts
   useEffect(() => {
     fetchProducts();
@@ -59,7 +52,12 @@ const AdminProductPage = () => {
 
   const fetchProducts = async () => {
     try {
-      const response = await axios.get(`${ADMIN_API_END_POINT}/products`, axiosConfig);
+      const response = await axios.get(ADMIN_PRODUCTS_API_END_POINT, {
+        headers: {
+          'Authorization': localStorage.getItem('adminToken')
+        }
+      });
+      
       // Group products by category
       const groupedProducts = response.data.products.reduce((acc, product) => {
         const categoryId = categoriesData.find(cat => cat.name === product.category)?.id;
@@ -118,13 +116,13 @@ const AdminProductPage = () => {
 
       if (editMode) {
         await axios.put(
-          `${ADMIN_API_END_POINT}/products/${newProduct.id}`,
+          `${ADMIN_PRODUCTS_API_END_POINT}/products/${newProduct.id}`,
           formData,
           config
         );
       } else {
         await axios.post(
-          `${ADMIN_API_END_POINT}/products/add`,
+          `${ADMIN_PRODUCTS_API_END_POINT}/products/add`,
           formData,
           config
         );
@@ -157,7 +155,11 @@ const AdminProductPage = () => {
 
   const removeProduct = async (id) => {
     try {
-      await axios.delete(`${ADMIN_API_END_POINT}/products/${id}`, axiosConfig);
+      await axios.delete(ADMIN_PRODUCTS_API_END_POINT, {
+        headers: {
+          'Authorization': localStorage.getItem('adminToken')
+        }
+      });
       await fetchProducts();
     } catch (error) {
       console.error("Error deleting product:", error);

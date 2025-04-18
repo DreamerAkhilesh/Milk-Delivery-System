@@ -119,7 +119,10 @@ const Navbar = () => {
             <Link to="/" className="text-gray-600 hover:text-[#49BDE9]">
               Home
             </Link>
-            <Link to="/products" className="text-gray-600 hover:text-[#49BDE9]">
+            <Link 
+              to={!user ? "/products" : (user?.role === "admin" ? "/admin/products" : "/user/products")} 
+              className="text-gray-600 hover:text-[#49BDE9] px-3 py-2 rounded-md hover:bg-gray-50"
+            >
               Products
             </Link>
             <Link to="/about" className="text-gray-600 hover:text-[#49BDE9]">
@@ -210,25 +213,25 @@ const Navbar = () => {
           <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
             <Link
               to="/"
-              className="block px-3 py-2 text-gray-600 hover:text-[#49BDE9]"
+              className="block px-3 py-2 text-gray-600 hover:text-[#49BDE9] hover:bg-gray-50 rounded-md"
             >
               Home
             </Link>
             <Link
-              to="/products"
-              className="block px-3 py-2 text-gray-600 hover:text-[#49BDE9]"
+              to={!user ? "/products" : (user?.role === "admin" ? "/admin/products" : "/user/products")}
+              className="block px-3 py-2 text-gray-600 hover:text-[#49BDE9] hover:bg-gray-50 rounded-md"
             >
               Products
             </Link>
             <Link
               to="/about"
-              className="block px-3 py-2 text-gray-600 hover:text-[#49BDE9]"
+              className="block px-3 py-2 text-gray-600 hover:text-[#49BDE9] hover:bg-gray-50 rounded-md"
             >
               About
             </Link>
             <Link
               to="/contact"
-              className="block px-3 py-2 text-gray-600 hover:text-[#49BDE9]"
+              className="block px-3 py-2 text-gray-600 hover:text-[#49BDE9] hover:bg-gray-50 rounded-md"
             >
               Contact
             </Link>

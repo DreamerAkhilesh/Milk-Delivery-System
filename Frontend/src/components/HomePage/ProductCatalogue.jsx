@@ -3,10 +3,10 @@ import AOS from "aos";
 import "aos/dist/aos.css";
 import CatalogueCard from "./CatalogueCard";
 import axios from "axios";
-import { USER_API_END_POINT } from "../../utils/constant";
+import { USER_PRODUCTS_API_END_POINT, ADMIN_PRODUCTS_API_END_POINT } from "../../utils/constant";
 import { toast } from "sonner";
 
-const ProductsCatalogue = () => {
+const ProductsCatalogue = ({ isAdmin = false }) => {
   const scrollRef = useRef(null);
   const [activeSection, setActiveSection] = useState(0);
   const [products, setProducts] = useState([]);
@@ -20,14 +20,16 @@ const ProductsCatalogue = () => {
       offset: 100
     });
     fetchProducts();
-  }, []);
+  }, [isAdmin]);
 
   const fetchProducts = async () => {
     try {
       setLoading(true);
       setError(null);
       
-      const response = await axios.get(`${USER_API_END_POINT}/products`);
+      // Use different endpoint based on user role
+      const endpoint = isAdmin ? ADMIN_PRODUCTS_API_END_POINT : USER_PRODUCTS_API_END_POINT;
+      const response = await axios.get(endpoint);
       
       if (!response.data || !response.data.products) {
         throw new Error('Invalid response format');

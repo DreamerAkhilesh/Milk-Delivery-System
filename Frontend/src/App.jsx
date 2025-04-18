@@ -1,11 +1,10 @@
 import React from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { Provider } from 'react-redux';
 import { Toaster } from 'sonner';
 import { CartProvider } from './context/CartContext';
 import store from './redux/store';
 import Home from './components/HomePage/Home';
-import ProductsCatalogue from './components/HomePage/ProductCatalogue';
 import ProductPage from './components/ProductPage/ProductPage';
 import ProductDetail from './components/ProductPage/ProductDetail';
 import Contacts from './components/Contacts/Contacts';
@@ -21,6 +20,23 @@ import AboutUs from './components/AboutUs/AboutUs';
 import AgentDashboard from './components/LiveChat/AgentDashboard';
 import SubscriptionForm from './components/Subscription/SubscriptionForm';
 import { ErrorBoundary } from 'react-error-boundary';
+
+// Route Protection Components
+const ProtectedRoute = ({ children }) => {
+  const token = localStorage.getItem('token');
+  if (!token) {
+    return <Navigate to="/login" replace />;
+  }
+  return children;
+};
+
+const AdminRoute = ({ children }) => {
+  const adminToken = localStorage.getItem('adminToken');
+  if (!adminToken) {
+    return <Navigate to="/admin/login" replace />;
+  }
+  return children;
+};
 
 // Error Fallback Component
 function ErrorFallback({ error, resetErrorBoundary }) {
@@ -52,8 +68,8 @@ function App() {
               <Route path="/home" element={<Home />} />
               <Route path="/about" element={<AboutUs />} />
               <Route path="/contact" element={<Contacts />} />
-              <Route path="/products" element={<ProductPage />} />
               <Route path="/product/:id" element={<ProductDetail />} />
+              <Route path="/products" element={<ProductPage />} />
 
               {/* Auth Routes */}
               <Route path="/login" element={<Login />} />
@@ -62,14 +78,43 @@ function App() {
               <Route path="/admin/register" element={<AdminRegister />} />
 
               {/* Protected User Routes */}
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/subscription" element={<SubscriptionForm />} />
+              <Route path="/user/profile" element={
+                <ProtectedRoute>
+                  <Profile />
+                </ProtectedRoute>
+              } />
+              <Route path="/user/subscription" element={
+                <ProtectedRoute>
+                  <SubscriptionForm />
+                </ProtectedRoute>
+              } />
+              <Route path="/user/products" element={
+                <ProtectedRoute>
+                  <ProductPage />
+                </ProtectedRoute>
+              } />
 
-              {/* Admin Routes */}
-              <Route path="/admin" element={<Dashboard />} />
-              <Route path="/admin/products" element={<AdminProductPage />} />
-              <Route path="/admin/users" element={<UserManagement />} />
-              <Route path="/admin/chat" element={<AgentDashboard />} />
+              {/* Protected Admin Routes */}
+              <Route path="/admin/dashboard" element={
+                <AdminRoute>
+                  <Dashboard />
+                </AdminRoute>
+              } />
+              <Route path="/admin/products" element={
+                <AdminRoute>
+                  <AdminProductPage />
+                </AdminRoute>
+              } />
+              <Route path="/admin/users" element={
+                <AdminRoute>
+                  <UserManagement />
+                </AdminRoute>
+              } />
+              <Route path="/admin/chat" element={
+                <AdminRoute>
+                  <AgentDashboard />
+                </AdminRoute>
+              } />
               
               {/* 404 Route */}
               <Route path="*" element={
