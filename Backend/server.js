@@ -13,7 +13,7 @@ import publicProductRoutes from "./routers/public_product_router.js";
 const envFile = process.env.NODE_ENV === 'production' ? '.env.production' : '.env.development';
 dotenv.config({ path: envFile });
 
-// Connect to MongoDB
+// Connect to MongoDB Atlas
 connectDB();
 
 // Initialize Express
@@ -25,7 +25,9 @@ app.use(cookieParser());
 
 // CORS configuration
 const corsOptions = {
-  origin: ['https://milk-delivery-frontend.onrender.com', 'http://localhost:5173'],
+  origin: process.env.NODE_ENV === 'production' 
+    ? ['https://milk-delivery-frontend.onrender.com']
+    : ['http://localhost:5173'],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
   exposedHeaders: ['Content-Range', 'X-Content-Range'],
@@ -42,7 +44,7 @@ app.use(cors(corsOptions));
 app.use((req, res, next) => {
   console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
   console.log('Origin:', req.headers.origin);
-  console.log('Headers:', req.headers);
+  console.log('Environment:', process.env.NODE_ENV);
   next();
 });
 
@@ -57,17 +59,47 @@ app.use("/api/v1/products", publicProductRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
-    res.status(200).json({ status: 'ok' });
+  res.status(200).json({ 
+    status: 'ok', 
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV,
+    database: 'Atlas connected',
+    frontend_url: process.env.FRONTEND_URL
+  });
 });
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-    console.error(err.stack);
-    res.status(500).json({ message: 'Something went wrong!' });
+  console.error('Error:', err);
+  
+  // Handle CORS errors
+  if (err.name === 'UnauthorizedError') {
+    return res.status(401).json({ 
+      message: 'Unauthorized access',
+      error: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
+  }
+
+  // Handle Atlas errors
+  if (err.name === 'MongoError') {
+    return res.status(500).json({ 
+      message: 'Atlas database error',
+      error: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
+  }
+
+  // Handle other errors
+  res.status(500).json({ 
+    message: 'Internal server error',
+    error: process.env.NODE_ENV === 'development' ? err.message : undefined
+  });
 });
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-    console.log(`Server running at port ${PORT}`);
-    console.log(`Allowed origins: ${corsOptions.origin}`);
+  console.log(`Server running at port ${PORT}`);
+  console.log(`Environment: ${process.env.NODE_ENV}`);
+  console.log(`Allowed origins: ${corsOptions.origin}`);
+  console.log(`Frontend URL: ${process.env.FRONTEND_URL}`);
+  console.log(`Atlas URL: ${process.env.DATABASE_URL ? 'Configured' : 'Not configured'}`);
 });
