@@ -55,56 +55,136 @@ const AdminProductPage = () => {
   // Add token management functions
   const getAdminToken = () => {
     const token = localStorage.getItem('adminToken');
-    console.log('Retrieved token:', token); // Debug log
+    console.log('Token found in localStorage:', token ? 'Yes' : 'No');
     if (!token) {
       console.error('No admin token found in localStorage');
+      window.location.href = '/admin/login';
       return null;
     }
+    console.log('Token format:', {
+      length: token.length,
+      startsWith: token.substring(0, 10) + '...',
+      endsWith: '...' + token.substring(token.length - 10)
+    });
     return token;
+  };
+
+  // Add health check function
+  const checkServerHealth = async () => {
+    try {
+      console.log('Checking server health...');
+      const response = await axios.get('http://localhost:5000/health');
+      console.log('Health check response:', response.data);
+      return response.data.success && response.data.data?.status === 'ok';
+    } catch (error) {
+      console.error('Server health check failed:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        config: error.config
+      });
+      return false;
+    }
   };
 
   const fetchProducts = async () => {
     try {
-      const token = getAdminToken();
-      if (!token) {
-        toast.error("Please login to continue");
+      // Check server health first
+      const isServerHealthy = await checkServerHealth();
+      if (!isServerHealthy) {
+        toast.error("Backend server is not responding. Please make sure the server is running.");
         return;
       }
+
+      const token = getAdminToken();
+      if (!token) {
+        return; // getAdminToken will handle the redirect
+      }
+
+      console.log('Making API request with config:', {
+        url: 'http://localhost:5000/api/v1/admin/products',
+        headers: {
+          'Authorization': `Bearer ${token.substring(0, 10)}...`,
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        }
+      });
 
       const config = {
         headers: {
           'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
         },
         withCredentials: true
       };
 
-      console.log('Fetching products with config:', config); // Debug log
+      try {
+        const response = await axios.get('http://localhost:5000/api/v1/admin/products', config);
+        
+        console.log('API Response:', {
+          status: response.status,
+          statusText: response.statusText,
+          headers: response.headers,
+          data: response.data
+        });
 
-      const response = await axios.get(ADMIN_PRODUCTS_API_END_POINT, config);
-      
-      // Group products by category
-      const groupedProducts = response.data.products.reduce((acc, product) => {
-        const categoryId = categoriesData.find(cat => cat.name === product.category)?.id;
-        if (categoryId) {
-          if (!acc[categoryId]) acc[categoryId] = [];
-          acc[categoryId].push({
-            ...product,
-            id: product._id,
-            image: product.images[0]
-          });
+        if (!response.data?.data?.products) {
+          console.error('Invalid response format:', response.data);
+          setProducts({}); // Set empty products object
+          return;
         }
-        return acc;
-      }, {});
-      setProducts(groupedProducts);
-    } catch (error) {
-      console.error("Error fetching products:", error);
-      console.error("Error response:", error.response);
-      if (error.response?.status === 401) {
-        toast.error("Session expired. Please login again.");
-        // Optionally redirect to login page
-      } else {
-        toast.error(error.response?.data?.message || "Error fetching products");
+
+        // Group products by category
+        const groupedProducts = response.data.data.products.reduce((acc, product) => {
+          const categoryId = categoriesData.find(cat => cat.name === product.category)?.id;
+          if (categoryId) {
+            if (!acc[categoryId]) acc[categoryId] = [];
+            acc[categoryId].push({
+              ...product,
+              id: product._id,
+              image: product.images?.[0] || null
+            });
+          }
+          return acc;
+        }, {});
+        setProducts(groupedProducts);
+      } catch (error) {
+        console.error("API Request Error:", {
+          message: error.message,
+          response: error.response?.data,
+          status: error.response?.status,
+          headers: error.response?.headers,
+          config: error.config
+        });
+
+        if (error.response?.status === 401) {
+          console.error('Authentication failed - Token expired or invalid');
+          localStorage.removeItem('adminToken');
+          window.location.href = '/admin/login';
+        } else if (error.response?.status === 403) {
+          console.error('Access forbidden - Insufficient permissions');
+          toast.error("You don't have permission to access this page");
+          window.location.href = '/admin/login';
+        } else if (error.response?.status === 404) {
+          console.error('Endpoint not found');
+          toast.error("The requested resource was not found");
+        } else if (error.response?.status === 500) {
+          console.error('Server error:', error.response.data);
+          toast.error("Server error. Please try again later.");
+        } else if (!error.response) {
+          console.error('Network error - No response from server');
+          toast.error("Could not connect to the server. Please check your connection.");
+        } else {
+          console.error('Unexpected error:', error);
+          toast.error(error.response?.data?.message || "An unexpected error occurred");
+        }
+        setProducts({}); // Set empty products object on error
       }
+    } catch (error) {
+      console.error("Error in fetchProducts:", error);
+      toast.error("An unexpected error occurred while fetching products");
+      setProducts({});
     }
   };
 
@@ -137,6 +217,8 @@ const AdminProductPage = () => {
     setIsLoading(true);
     try {
       const formData = new FormData();
+      
+      // Add required fields
       formData.append('name', newProduct.name.trim());
       formData.append('description', newProduct.description.trim());
       formData.append('pricePerDay', parseFloat(newProduct.pricePerDay));
@@ -144,9 +226,10 @@ const AdminProductPage = () => {
       formData.append('category', newProduct.category);
       formData.append('availability', newProduct.availability);
       
+      // Add images if present
       if (imageFile) {
         imageFile.forEach((file, index) => {
-          formData.append('images', file);
+          formData.append('productImages', file); // Changed from 'images' to 'productImages' to match backend
         });
       }
 
@@ -154,11 +237,18 @@ const AdminProductPage = () => {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'multipart/form-data'
-        },
-        withCredentials: true
+        }
       };
 
-      console.log('Making request with config:', config); // Debug log
+      console.log('Sending product data:', {
+        name: newProduct.name,
+        description: newProduct.description,
+        pricePerDay: newProduct.pricePerDay,
+        quantity: newProduct.quantity,
+        category: newProduct.category,
+        availability: newProduct.availability,
+        imageCount: imageFile ? imageFile.length : 0
+      });
 
       const endpoint = editMode 
         ? `${ADMIN_PRODUCTS_API_END_POINT}/${newProduct.id}`
@@ -167,6 +257,12 @@ const AdminProductPage = () => {
       const response = editMode
         ? await axios.put(endpoint, formData, config)
         : await axios.post(endpoint, formData, config);
+
+      console.log('Product API Response:', response.data);
+
+      if (!response.data?.success) {
+        throw new Error(response.data?.message || 'Invalid response from server');
+      }
 
       await fetchProducts();
       setIsOpen(false);
@@ -186,14 +282,24 @@ const AdminProductPage = () => {
 
       toast.success(`Product ${editMode ? 'updated' : 'added'} successfully`);
     } catch (error) {
-      console.error("Error saving product:", error);
-      console.error("Error response:", error.response);
-      if (error.response?.status === 401) {
-        toast.error("Session expired. Please login again.");
-        // Optionally redirect to login page
-      } else {
-        const errorMessage = error.response?.data?.message || "Error saving product";
+      console.error("Error saving product:", {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
+      
+      if (error.response?.status === 400) {
+        const errorMessage = error.response.data?.message || "Invalid product data";
         toast.error(errorMessage);
+      } else if (error.response?.status === 401) {
+        toast.error("Session expired. Please login again.");
+        window.location.href = '/admin/login';
+      } else if (error.response?.status === 500) {
+        toast.error("Server error. Please try again later.");
+      } else if (!error.response) {
+        toast.error("No response from server. Please check your connection.");
+      } else {
+        toast.error(error.response?.data?.message || "Error saving product");
       }
     } finally {
       setIsLoading(false);
@@ -202,16 +308,34 @@ const AdminProductPage = () => {
 
   const removeProduct = async (id) => {
     try {
-      await axios.delete(`${ADMIN_PRODUCTS_API_END_POINT}/${id}`, {
+      const token = getAdminToken();
+      if (!token) {
+        toast.error("Please login to continue");
+        return;
+      }
+
+      const config = {
         headers: {
-          'Authorization': localStorage.getItem('adminToken')
-        }
-      });
+          'Authorization': `Bearer ${token}`,
+        },
+        withCredentials: true
+      };
+
+      await axios.delete(`${ADMIN_PRODUCTS_API_END_POINT}/${id}`, config);
       await fetchProducts();
       toast.success("Product deleted successfully");
     } catch (error) {
       console.error("Error deleting product:", error);
-      toast.error(error.response?.data?.message || "Error deleting product");
+      
+      if (error.response?.status === 401) {
+        toast.error("Session expired. Please login again.");
+      } else if (error.response?.status === 500) {
+        toast.error("Server error. Please try again later.");
+      } else if (error.request) {
+        toast.error("No response from server. Please check your connection.");
+      } else {
+        toast.error(error.response?.data?.message || "Error deleting product");
+      }
     }
   };
 

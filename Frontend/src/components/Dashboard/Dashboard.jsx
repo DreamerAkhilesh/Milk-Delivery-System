@@ -1,15 +1,28 @@
-import React from 'react'
-import { useSelector } from 'react-redux'
+import React, { useEffect } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
 import { Navigate, Link } from 'react-router-dom'
 import Navbar from '../shared/Navbar'
 import Footer from '../shared/Footer'
 import CurrentDelivery from './CurrentDeliveries'
 import Stats from './Stats'
+import { setUser } from '../../redux/authSlice'
 
 const Dashboard = () => {
+  const dispatch = useDispatch()
   const { user } = useSelector((state) => state.auth)
 
-  console.log("Current user in Dashboard:", user); // Add this for debugging
+  useEffect(() => {
+    // Load admin data from localStorage if not in Redux state
+    if (!user?.id && localStorage.getItem('adminToken')) {
+      const storedAdminData = localStorage.getItem('adminData')
+      if (storedAdminData) {
+        const adminData = JSON.parse(storedAdminData)
+        dispatch(setUser(adminData))
+      }
+    }
+  }, [dispatch, user])
+
+  console.log("Current user in Dashboard:", user)
 
   // Redirect to login if not authenticated or not an admin
   if (!user || user.role !== 'admin') {
