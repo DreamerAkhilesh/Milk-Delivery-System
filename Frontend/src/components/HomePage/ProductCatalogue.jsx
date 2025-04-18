@@ -27,24 +27,38 @@ const ProductsCatalogue = ({ isAdmin = false }) => {
       setLoading(true);
       setError(null);
       
-      // Use different endpoint based on user role
       const endpoint = isAdmin ? ADMIN_PRODUCTS_API_END_POINT : USER_PRODUCTS_API_END_POINT;
       const response = await axios.get(endpoint);
       
-      if (!response.data || !response.data.products) {
-        throw new Error('Invalid response format');
+      console.log('Products API Response:', response.data);
+
+      // Handle empty or invalid response
+      if (!response.data?.data?.products) {
+        console.error('Invalid response format:', response.data);
+        setProducts([]);
+        return;
       }
 
-      // Get only the first 8 products for the homepage
-      const limitedProducts = response.data.products.slice(0, 8);
+      const productsData = response.data.data.products;
+      const limitedProducts = productsData.slice(0, 8).map(product => ({
+        ...product,
+        _id: product.id // Map id to _id for consistency
+      }));
+      
+      console.log('Limited products:', limitedProducts);
       setProducts(limitedProducts);
     } catch (error) {
-      console.error("Error fetching products:", error);
+      console.error("Error fetching products:", {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
       setError(error.message);
+      setProducts([]); // Set empty products array on error
       
       if (error.response) {
-        toast.error(`Failed to load products: ${error.response.data.message || 'Server error'}`);
-      } else if (error.request) {
+        toast.error(`Failed to load products: ${error.response.data?.message || 'Server error'}`);
+      } else if (!error.response) {
         toast.error("Failed to load products: No response from server. Please make sure the backend server is running.");
       } else {
         toast.error(`Failed to load products: ${error.message}`);
@@ -140,6 +154,25 @@ const ProductsCatalogue = ({ isAdmin = false }) => {
         {loading ? (
           <div className="flex justify-center items-center h-[400px]">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#49BDE9]"></div>
+          </div>
+        ) : products.length === 0 ? (
+          <div className="text-center py-12">
+            <div className="bg-gray-50 p-8 rounded-lg">
+              <h3 className="text-xl font-semibold text-gray-800 mb-2">No Products Available</h3>
+              <p className="text-gray-600 mb-4">
+                {isAdmin 
+                  ? "You haven't added any products yet. Click the button below to add your first product."
+                  : "We're currently updating our product catalog. Please check back soon!"}
+              </p>
+              {isAdmin && (
+                <button
+                  onClick={() => window.location.href = '/admin/products/add'}
+                  className="px-4 py-2 bg-[#49BDE9] text-white rounded-md hover:bg-[#3A9BC7] transition-colors"
+                >
+                  Add New Product
+                </button>
+              )}
+            </div>
           </div>
         ) : (
           <>

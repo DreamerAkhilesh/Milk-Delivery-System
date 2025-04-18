@@ -27,24 +27,22 @@ const ProductPage = () => {
       setLoading(true);
       setError(null);
       
-      console.log('Fetching products from:', USER_PRODUCTS_API_END_POINT);
-      
       const response = await axios.get(USER_PRODUCTS_API_END_POINT, {
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json'
-        },
-        withCredentials: true
+        }
       });
       
-      console.log('Response received:', response);
-      
-      if (!response.data || !response.data.products) {
-        throw new Error('Invalid response format');
+      console.log('Products API Response:', response.data);
+
+      if (!response.data?.data?.products) {
+        console.error('Invalid response format:', response.data);
+        setProducts({}); // Set empty products object
+        return;
       }
 
-      // The backend sends products in response.data.products
-      const productsData = response.data.products;
+      const productsData = response.data.data.products;
 
       // Group products by category
       const groupedProducts = productsData.reduce((acc, product) => {
@@ -53,27 +51,27 @@ const ProductPage = () => {
           if (!acc[categoryId]) acc[categoryId] = [];
           acc[categoryId].push({
             ...product,
-            id: product._id,
+            _id: product.id, // Map id to _id for consistency
             images: product.images || []
           });
         }
         return acc;
       }, {});
       
+      console.log('Grouped products:', groupedProducts);
       setProducts(groupedProducts);
     } catch (error) {
-      console.error("Detailed error:", {
+      console.error("Error fetching products:", {
         message: error.message,
-        response: error.response,
-        request: error.request,
-        config: error.config
+        response: error.response?.data,
+        status: error.response?.status
       });
-      
       setError(error.message);
+      setProducts({}); // Set empty products object on error
       
       if (error.response) {
-        toast.error(`Failed to load products: ${error.response.data.message || 'Server error'}`);
-      } else if (error.request) {
+        toast.error(`Failed to load products: ${error.response.data?.message || 'Server error'}`);
+      } else if (!error.response) {
         toast.error("Failed to load products: No response from server. Please make sure the backend server is running.");
       } else {
         toast.error(`Failed to load products: ${error.message}`);
@@ -108,6 +106,9 @@ const ProductPage = () => {
     );
   }
 
+  // Check if there are any products in the selected category
+  const hasProducts = products[selectedCategory]?.length > 0;
+
   return (
     <div className="min-h-screen">
       <Navbar />
@@ -136,10 +137,21 @@ const ProductPage = () => {
 
           {/* Products Grid */}
           <div className="w-full md:w-3/4">
-            <CategorySection
-              category={categoriesData.find(cat => cat.id === selectedCategory)}
-              products={products[selectedCategory] || []}
-            />
+            {!hasProducts ? (
+              <div className="text-center py-12">
+                <div className="bg-gray-50 p-8 rounded-lg">
+                  <h3 className="text-xl font-semibold text-gray-800 mb-2">No Products Available</h3>
+                  <p className="text-gray-600 mb-4">
+                    We're currently updating our product catalog. Please check back soon!
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <CategorySection
+                category={categoriesData.find(cat => cat.id === selectedCategory)}
+                products={products[selectedCategory] || []}
+              />
+            )}
           </div>
         </div>
       </div>

@@ -22,29 +22,57 @@ const AdminLogin = () => {
     setLoading(true);
 
     try {
+      console.log('Attempting admin login with:', { email: formData.email });
       const res = await axios.post(`${ADMIN_API_END_POINT}/login`, formData);
+      console.log('Login response:', res.data);
       
+      // Check if we have the expected nested data structure
+      if (!res.data?.data?.token) {
+        console.error('Invalid response format:', res.data);
+        setError("Invalid response from server");
+        return;
+      }
+
       // Store the token
-      localStorage.setItem("adminToken", res.data.token);
+      localStorage.setItem("adminToken", res.data.data.token);
+      console.log('Token stored in localStorage');
       
       // Create admin object from response
       const adminData = {
-        id: res.data.admin?.id || '',
-        name: res.data.admin?.name || '',
-        email: res.data.admin?.email || '',
+        id: res.data.data.admin?.id || '',
+        name: res.data.data.admin?.name || '',
+        email: res.data.data.admin?.email || '',
         role: "admin",
-        token: res.data.token
+        token: res.data.data.token
       };
+      
+      // Store admin data in localStorage
+      localStorage.setItem("adminData", JSON.stringify(adminData));
+      console.log('Admin data stored in localStorage:', adminData);
       
       // Update Redux state
       dispatch(setUser(adminData));
+      console.log('Redux state updated with admin data');
       
       // Navigate to admin dashboard
       navigate("/admin/dashboard");
       
     } catch (err) {
-      console.error("Login error:", err);
-      setError(err.response?.data?.message || "Login failed, try again.");
+      console.error("Login error:", {
+        message: err.message,
+        response: err.response?.data,
+        status: err.response?.status
+      });
+      
+      if (err.response?.status === 401) {
+        setError("Invalid email or password");
+      } else if (err.response?.status === 400) {
+        setError(err.response.data.message || "Please provide both email and password");
+      } else if (!err.response) {
+        setError("Could not connect to the server. Please try again later.");
+      } else {
+        setError(err.response?.data?.message || "Login failed, try again.");
+      }
     } finally {
       setLoading(false);
     }

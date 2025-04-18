@@ -9,7 +9,13 @@ const __dirname = path.dirname(__filename);
 // Create uploads directory if it doesn't exist
 const uploadDir = path.join(__dirname, '../../uploads/products');
 if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
+  try {
+    fs.mkdirSync(uploadDir, { recursive: true });
+    console.log('Created uploads directory:', uploadDir);
+  } catch (error) {
+    console.error('Error creating uploads directory:', error);
+    throw new Error('Failed to create uploads directory');
+  }
 }
 
 const storage = multer.diskStorage({
@@ -23,17 +29,25 @@ const storage = multer.diskStorage({
 });
 
 const fileFilter = (req, file, cb) => {
-  // Check file type
-  if (!file.mimetype.startsWith('image/')) {
-    return cb(new Error('Only image files are allowed!'), false);
-  }
+  try {
+    // Check file type
+    if (!file.mimetype.startsWith('image/')) {
+      console.log('Invalid file type:', file.mimetype);
+      return cb(new Error('Only image files are allowed!'), false);
+    }
 
-  // Check file size (5MB limit)
-  if (file.size > 5 * 1024 * 1024) {
-    return cb(new Error('File size exceeds 5MB limit!'), false);
-  }
+    // Check file size (5MB limit)
+    if (file.size > 5 * 1024 * 1024) {
+      console.log('File size exceeded:', file.size);
+      return cb(new Error('File size exceeds 5MB limit!'), false);
+    }
 
-  cb(null, true);
+    console.log('File accepted:', file.originalname);
+    cb(null, true);
+  } catch (error) {
+    console.error('Error in file filter:', error);
+    cb(error, false);
+  }
 };
 
 // Create multer instance with error handling
@@ -48,28 +62,39 @@ const upload = multer({
 
 // Error handling middleware
 export const handleUploadError = (err, req, res, next) => {
+  console.error('Upload error:', err);
+  
   if (err instanceof multer.MulterError) {
+    console.log('Multer error code:', err.code);
+    
     if (err.code === 'LIMIT_FILE_SIZE') {
       return res.status(400).json({ 
-        message: 'File size exceeds 5MB limit' 
+        message: 'File size exceeds 5MB limit',
+        error: 'FILE_SIZE_LIMIT'
       });
     }
     if (err.code === 'LIMIT_FILE_COUNT') {
       return res.status(400).json({ 
-        message: 'Maximum 5 files allowed' 
+        message: 'Maximum 5 files allowed',
+        error: 'FILE_COUNT_LIMIT'
       });
     }
     return res.status(400).json({ 
       message: 'File upload error', 
-      error: err.message 
+      error: err.code || 'UPLOAD_ERROR',
+      details: err.message
     });
   }
+  
   if (err) {
+    console.error('General upload error:', err);
     return res.status(400).json({ 
       message: 'File upload error', 
-      error: err.message 
+      error: 'UPLOAD_ERROR',
+      details: err.message
     });
   }
+  
   next();
 };
 

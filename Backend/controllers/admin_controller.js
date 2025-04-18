@@ -69,23 +69,36 @@ export const registerAdmin = async (req, res) => {
 export const loginAdmin = async (req, res) => {
   try {
     const { email, password } = req.body;
-    const admin = await Admin.findOne({ email });
+    console.log('Admin login attempt:', { email });
+
+    if (!email || !password) {
+      console.log('Missing credentials');
+      return res.status(400).json({ message: "Email and password are required" });
+    }
+
+    const admin = await Admin.findOne({ email: email.toLowerCase() });
+    console.log('Admin found:', admin ? 'Yes' : 'No');
 
     if (!admin) {
+      console.log('Admin not found for email:', email);
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
     // Compare password with hashed password in DB
     const isMatch = await bcrypt.compare(password, admin.password);
+    console.log('Password match:', isMatch);
+
     if (!isMatch) {
+      console.log('Password mismatch for admin:', email);
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
     // Generate JWT Token
     const token = jwt.sign({ id: admin._id, role: "admin" }, process.env.JWT_SECRET, { expiresIn: "1d" });
+    console.log('Token generated for admin:', admin.email);
 
     // Send response with admin data and token
-    res.json({
+    const response = {
       message: "Admin logged in successfully",
       token,
       admin: {
@@ -94,9 +107,15 @@ export const loginAdmin = async (req, res) => {
         email: admin.email,
         role: admin.role
       }
-    });
+    };
+    console.log('Sending response:', response);
+    res.json(response);
   } catch (error) {
-    res.status(500).json({ message: "Error logging in admin", error });
+    console.error('Admin login error:', error);
+    res.status(500).json({ 
+      message: "Error logging in admin", 
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error' 
+    });
   }
 };
 

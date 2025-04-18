@@ -8,26 +8,24 @@ export const addProduct = async (req, res) => {
     console.log('Request body:', req.body);
     console.log('Request files:', req.files);
 
-    const { name, description, pricePerDay, quantity, category, availability } = req.body;
+    const { name, description, pricePerDay, quantity, category = "Milk", availability } = req.body;
 
     // Validate required fields
-    if (!name || !description || !pricePerDay || !quantity || !category) {
+    if (!name || !description || !pricePerDay || !quantity) {
+      console.log('Missing required fields:', {
+        name: !name,
+        description: !description,
+        pricePerDay: !pricePerDay,
+        quantity: !quantity
+      });
       return res.status(400).json({ 
-        message: "Name, description, price, quantity, and category are required.",
+        message: "Name, description, price, and quantity are required.",
         missingFields: {
           name: !name,
           description: !description,
           pricePerDay: !pricePerDay,
-          quantity: !quantity,
-          category: !category
+          quantity: !quantity
         }
-      });
-    }
-
-    // Validate description length
-    if (description.length < 10) {
-      return res.status(400).json({ 
-        message: "Description must be at least 10 characters long." 
       });
     }
 
@@ -61,10 +59,6 @@ export const addProduct = async (req, res) => {
       req.files.forEach(file => {
         imagePaths.push(`/uploads/products/${file.filename}`);
       });
-    } else {
-      return res.status(400).json({ 
-        message: "At least one product image is required." 
-      });
     }
 
     // Create new product
@@ -78,16 +72,27 @@ export const addProduct = async (req, res) => {
       availability: availability ?? true,
     });
 
+    console.log('Creating new product:', newProduct);
+
     // Save product to database
-    await newProduct.save();
+    const savedProduct = await newProduct.save();
+    console.log('Product saved successfully:', savedProduct);
 
     res.status(201).json({ 
       message: "Product added successfully", 
-      product: newProduct 
+      data: {
+        product: savedProduct
+      }
     });
 
   } catch (error) {
     console.error("Error adding product:", error);
+    console.error("Error stack:", error.stack);
+    console.error("Error details:", {
+      name: error.name,
+      message: error.message,
+      code: error.code
+    });
     
     // If there's a validation error, return specific error message
     if (error.name === 'ValidationError') {
@@ -99,7 +104,7 @@ export const addProduct = async (req, res) => {
     }
 
     res.status(500).json({ 
-      message: "Server error", 
+      message: "Failed to add product", 
       error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error' 
     });
   }
