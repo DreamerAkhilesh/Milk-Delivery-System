@@ -5,29 +5,75 @@ import Product from "../models/product_model.js";
  */
 export const addProduct = async (req, res) => {
   try {
+    console.log('Request body:', req.body);
+    console.log('Request files:', req.files);
+
     const { name, description, pricePerDay, quantity, category, availability } = req.body;
 
     // Validate required fields
     if (!name || !description || !pricePerDay || !quantity || !category) {
-      return res.status(400).json({ message: "Name, description, price, quantity, and category are required." });
+      return res.status(400).json({ 
+        message: "Name, description, price, quantity, and category are required.",
+        missingFields: {
+          name: !name,
+          description: !description,
+          pricePerDay: !pricePerDay,
+          quantity: !quantity,
+          category: !category
+        }
+      });
+    }
+
+    // Validate description length
+    if (description.length < 10) {
+      return res.status(400).json({ 
+        message: "Description must be at least 10 characters long." 
+      });
+    }
+
+    // Validate category
+    const validCategories = ["Milk", "Milk Products", "Traditional Sweets"];
+    if (!validCategories.includes(category)) {
+      return res.status(400).json({ 
+        message: "Invalid category. Must be one of: Milk, Milk Products, Traditional Sweets" 
+      });
+    }
+
+    // Convert price and quantity to numbers
+    const numericPrice = parseFloat(pricePerDay);
+    const numericQuantity = parseInt(quantity);
+
+    if (isNaN(numericPrice) || numericPrice < 0) {
+      return res.status(400).json({ 
+        message: "Price must be a valid positive number." 
+      });
+    }
+
+    if (isNaN(numericQuantity) || numericQuantity < 0) {
+      return res.status(400).json({ 
+        message: "Quantity must be a valid positive number." 
+      });
     }
 
     // Handle multiple image uploads
     const imagePaths = [];
     if (req.files && req.files.length > 0) {
       req.files.forEach(file => {
-        // Store relative path from uploads directory
         imagePaths.push(`/uploads/products/${file.filename}`);
+      });
+    } else {
+      return res.status(400).json({ 
+        message: "At least one product image is required." 
       });
     }
 
     // Create new product
     const newProduct = new Product({
-      name,
-      description,
-      pricePerDay,
+      name: name.trim(),
+      description: description.trim(),
+      pricePerDay: numericPrice,
       images: imagePaths,
-      quantity,
+      quantity: numericQuantity,
       category,
       availability: availability ?? true,
     });
@@ -47,7 +93,8 @@ export const addProduct = async (req, res) => {
     if (error.name === 'ValidationError') {
       return res.status(400).json({ 
         message: "Validation error", 
-        error: error.message 
+        error: error.message,
+        details: error.errors 
       });
     }
 

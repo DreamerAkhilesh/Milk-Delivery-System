@@ -23,18 +23,54 @@ const storage = multer.diskStorage({
 });
 
 const fileFilter = (req, file, cb) => {
-  if (file.mimetype.startsWith('image/')) {
-    cb(null, true);
-  } else {
-    cb(new Error('Not an image! Please upload an image.'), false);
+  // Check file type
+  if (!file.mimetype.startsWith('image/')) {
+    return cb(new Error('Only image files are allowed!'), false);
   }
+
+  // Check file size (5MB limit)
+  if (file.size > 5 * 1024 * 1024) {
+    return cb(new Error('File size exceeds 5MB limit!'), false);
+  }
+
+  cb(null, true);
 };
 
-export const upload = multer({
+// Create multer instance with error handling
+const upload = multer({
   storage: storage,
   fileFilter: fileFilter,
   limits: {
     fileSize: 5 * 1024 * 1024, // 5MB limit per file
     files: 5 // Maximum 5 files
   }
-}); 
+});
+
+// Error handling middleware
+export const handleUploadError = (err, req, res, next) => {
+  if (err instanceof multer.MulterError) {
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      return res.status(400).json({ 
+        message: 'File size exceeds 5MB limit' 
+      });
+    }
+    if (err.code === 'LIMIT_FILE_COUNT') {
+      return res.status(400).json({ 
+        message: 'Maximum 5 files allowed' 
+      });
+    }
+    return res.status(400).json({ 
+      message: 'File upload error', 
+      error: err.message 
+    });
+  }
+  if (err) {
+    return res.status(400).json({ 
+      message: 'File upload error', 
+      error: err.message 
+    });
+  }
+  next();
+};
+
+export { upload }; 

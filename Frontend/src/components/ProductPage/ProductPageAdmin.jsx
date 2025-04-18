@@ -44,19 +44,43 @@ const AdminProductPage = () => {
   });
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [formErrors, setFormErrors] = useState({});
 
   // Fetch products when component mounts
   useEffect(() => {
     fetchProducts();
   }, []);
 
+  // Add token management functions
+  const getAdminToken = () => {
+    const token = localStorage.getItem('adminToken');
+    console.log('Retrieved token:', token); // Debug log
+    if (!token) {
+      console.error('No admin token found in localStorage');
+      return null;
+    }
+    return token;
+  };
+
   const fetchProducts = async () => {
     try {
-      const response = await axios.get(ADMIN_PRODUCTS_API_END_POINT, {
+      const token = getAdminToken();
+      if (!token) {
+        toast.error("Please login to continue");
+        return;
+      }
+
+      const config = {
         headers: {
-          'Authorization': localStorage.getItem('adminToken')
-        }
-      });
+          'Authorization': `Bearer ${token}`,
+        },
+        withCredentials: true
+      };
+
+      console.log('Fetching products with config:', config); // Debug log
+
+      const response = await axios.get(ADMIN_PRODUCTS_API_END_POINT, config);
       
       // Group products by category
       const groupedProducts = response.data.products.reduce((acc, product) => {
@@ -74,6 +98,13 @@ const AdminProductPage = () => {
       setProducts(groupedProducts);
     } catch (error) {
       console.error("Error fetching products:", error);
+      console.error("Error response:", error.response);
+      if (error.response?.status === 401) {
+        toast.error("Session expired. Please login again.");
+        // Optionally redirect to login page
+      } else {
+        toast.error(error.response?.data?.message || "Error fetching products");
+      }
     }
   };
 
@@ -92,41 +123,50 @@ const AdminProductPage = () => {
   };
 
   const handleAddOrUpdateProduct = async () => {
+    if (!validateForm()) {
+      toast.error("Please fill in all required fields correctly");
+      return;
+    }
+
+    const token = getAdminToken();
+    if (!token) {
+      toast.error("Please login to continue");
+      return;
+    }
+
+    setIsLoading(true);
     try {
       const formData = new FormData();
-      formData.append('name', newProduct.name);
-      formData.append('description', newProduct.description);
-      formData.append('pricePerDay', newProduct.pricePerDay);
-      formData.append('quantity', newProduct.quantity);
+      formData.append('name', newProduct.name.trim());
+      formData.append('description', newProduct.description.trim());
+      formData.append('pricePerDay', parseFloat(newProduct.pricePerDay));
+      formData.append('quantity', parseInt(newProduct.quantity));
       formData.append('category', newProduct.category);
       formData.append('availability', newProduct.availability);
       
       if (imageFile) {
         imageFile.forEach((file, index) => {
-          formData.append('productImages', file);
+          formData.append('images', file);
         });
       }
 
       const config = {
         headers: {
-          'Authorization': localStorage.getItem('adminToken'),
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'multipart/form-data'
-        }
+        },
+        withCredentials: true
       };
 
-      if (editMode) {
-        await axios.put(
-          `${ADMIN_PRODUCTS_API_END_POINT}/${newProduct.id}`,
-          formData,
-          config
-        );
-      } else {
-        await axios.post(
-          `${ADMIN_PRODUCTS_API_END_POINT}/add`,
-          formData,
-          config
-        );
-      }
+      console.log('Making request with config:', config); // Debug log
+
+      const endpoint = editMode 
+        ? `${ADMIN_PRODUCTS_API_END_POINT}/${newProduct.id}`
+        : `${ADMIN_PRODUCTS_API_END_POINT}/add`;
+
+      const response = editMode
+        ? await axios.put(endpoint, formData, config)
+        : await axios.post(endpoint, formData, config);
 
       await fetchProducts();
       setIsOpen(false);
@@ -142,11 +182,21 @@ const AdminProductPage = () => {
         category: "Milk",
         availability: true,
       });
+      setFormErrors({});
 
       toast.success(`Product ${editMode ? 'updated' : 'added'} successfully`);
     } catch (error) {
       console.error("Error saving product:", error);
-      toast.error(error.response?.data?.message || "Error saving product");
+      console.error("Error response:", error.response);
+      if (error.response?.status === 401) {
+        toast.error("Session expired. Please login again.");
+        // Optionally redirect to login page
+      } else {
+        const errorMessage = error.response?.data?.message || "Error saving product";
+        toast.error(errorMessage);
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -182,6 +232,11 @@ const AdminProductPage = () => {
 
   const handleCategoryChange = (value) => {
     setNewProduct((prev) => ({ ...prev, category: value }));
+  };
+
+  const validateForm = () => {
+    // Implement form validation logic here
+    return true; // Placeholder return, actual implementation needed
   };
 
   return (
