@@ -28,10 +28,19 @@ const corsOptions = {
   origin: process.env.NODE_ENV === 'production' 
     ? ['https://milk-delivery-frontend.onrender.com', 'http://localhost:5173'] 
     : '*',
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+  credentials: true,
+  preflightContinue: false,
+  optionsSuccessStatus: 204
 };
+
+// Add logging middleware
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
+  console.log('Headers:', req.headers);
+  next();
+});
 
 app.use(cors(corsOptions));
 app.use(express.json());

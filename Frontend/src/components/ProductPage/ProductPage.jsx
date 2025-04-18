@@ -27,7 +27,16 @@ const ProductPage = () => {
       setLoading(true);
       setError(null);
       
-      const response = await axios.get(USER_PRODUCTS_API_END_POINT);
+      console.log('Fetching products from:', USER_PRODUCTS_API_END_POINT);
+      
+      const response = await axios.get(USER_PRODUCTS_API_END_POINT, {
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      console.log('Response received:', response);
       
       if (!response.data || !response.data.products) {
         throw new Error('Invalid response format');
@@ -52,7 +61,13 @@ const ProductPage = () => {
       
       setProducts(groupedProducts);
     } catch (error) {
-      console.error("Error fetching products:", error);
+      console.error("Detailed error:", {
+        message: error.message,
+        response: error.response,
+        request: error.request,
+        config: error.config
+      });
+      
       setError(error.message);
       
       if (error.response) {
