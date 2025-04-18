@@ -43,6 +43,8 @@ export const addProduct = async (req, res) => {
  */
 export const getAllProducts = async (req, res) => {
   try {
+    console.log('Fetching products with query:', req.query);
+    
     const { category, subcategory, minPrice, maxPrice, availability } = req.query;
 
     // Build the query object
@@ -59,8 +61,12 @@ export const getAllProducts = async (req, res) => {
       query.availability = availability === "true";
     }
 
+    console.log('Final query:', JSON.stringify(query));
+
     // Fetch products based on filters
-    const products = await Product.find(query);
+    const products = await Product.find(query).lean();
+
+    console.log(`Found ${products.length} products`);
 
     if (!products || products.length === 0) {
       return res.status(200).json({
@@ -77,9 +83,16 @@ export const getAllProducts = async (req, res) => {
 
   } catch (error) {
     console.error("Error fetching products:", error);
+    console.error("Error stack:", error.stack);
+    console.error("Error details:", {
+      name: error.name,
+      message: error.message,
+      code: error.code
+    });
+    
     res.status(500).json({ 
       message: "Failed to fetch products", 
-      error: error.message 
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
     });
   }
 };

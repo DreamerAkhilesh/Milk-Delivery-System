@@ -13,9 +13,8 @@ const connectDB = async () => {
             throw new Error('DATABASE_URL is not defined in environment variables');
         }
 
-        // Parse the connection URL to get the database name
-        const url = new URL(process.env.DATABASE_URL);
-        const dbName = url.searchParams.get('appName') || 'milk_delivery';
+        console.log('Attempting to connect to MongoDB Atlas...');
+        console.log('Environment:', process.env.NODE_ENV);
 
         const options = {
             // Remove deprecated options
@@ -28,7 +27,7 @@ const connectDB = async () => {
             heartbeatFrequencyMS: 10000,
             maxIdleTimeMS: 30000,
             // Specify database name
-            dbName: dbName
+            dbName: 'milk_delivery'
         };
 
         const conn = await mongoose.connect(process.env.DATABASE_URL, options);
@@ -60,6 +59,7 @@ const connectDB = async () => {
 
     } catch (error) {
         console.error(`Atlas connection error: ${error.message}`);
+        console.error('Full error:', error);
         // Retry connection after 5 seconds
         setTimeout(connectDB, 5000);
     }
