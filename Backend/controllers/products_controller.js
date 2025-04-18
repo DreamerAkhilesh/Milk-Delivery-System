@@ -64,21 +64,43 @@ export const getAllProducts = async (req, res) => {
     console.log('Final query:', JSON.stringify(query));
 
     // Fetch products based on filters
-    const products = await Product.find(query).lean();
+    const products = await Product.find(query)
+      .lean()
+      .select('-_id -__v') // Exclude MongoDB specific fields
+      .exec();
 
     console.log(`Found ${products.length} products`);
 
+    // Set response headers
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Cache-Control', 'no-cache');
+
     if (!products || products.length === 0) {
       return res.status(200).json({
+        success: true,
         message: "No products found",
-        products: []
+        data: {
+          products: [],
+          count: 0
+        }
       });
     }
 
+    // Format the response
+    const formattedProducts = products.map(product => ({
+      ...product,
+      pricePerDay: Number(product.pricePerDay).toFixed(2),
+      availability: Boolean(product.availability)
+    }));
+
     res.status(200).json({
+      success: true,
       message: "Products retrieved successfully",
-      count: products.length,
-      products,
+      data: {
+        products: formattedProducts,
+        count: formattedProducts.length
+      }
     });
 
   } catch (error) {
@@ -91,6 +113,7 @@ export const getAllProducts = async (req, res) => {
     });
     
     res.status(500).json({ 
+      success: false,
       message: "Failed to fetch products", 
       error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
     });

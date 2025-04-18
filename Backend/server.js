@@ -27,9 +27,9 @@ app.use(cookieParser());
 const corsOptions = {
   origin: process.env.NODE_ENV === 'production' 
     ? ['https://milk-delivery-frontend.onrender.com']
-    : ['http://localhost:5173'],
+    : ['http://localhost:5173', 'http://localhost:3000', 'http://127.0.0.1:5173', 'http://127.0.0.1:3000'],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-Requested-With'],
   exposedHeaders: ['Content-Range', 'X-Content-Range'],
   credentials: true,
   maxAge: 600, // Cache preflight request for 10 minutes
@@ -45,6 +45,7 @@ app.use((req, res, next) => {
   console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
   console.log('Origin:', req.headers.origin);
   console.log('Environment:', process.env.NODE_ENV);
+  console.log('Headers:', req.headers);
   next();
 });
 
