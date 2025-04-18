@@ -3,11 +3,16 @@ import dotenv from "dotenv";
 import cors from "cors";
 import connectDB from "./config/db.js";
 import cookieParser from 'cookie-parser';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import userRoutes from "./routers/user_router.js";
 import adminRoutes from "./routers/admin_router.js";
 import adminProductRoutes from "./routers/admin_product_router.js";
 import userProductRoutes from "./routers/user_product_router.js";
 import publicProductRoutes from "./routers/public_product_router.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Load environment variables based on NODE_ENV
 const envFile = process.env.NODE_ENV === 'production' ? '.env.production' : '.env.development';
@@ -22,6 +27,9 @@ const app = express();
 // Middleware
 app.use(express.urlencoded({extended:true}));
 app.use(cookieParser());
+
+// Serve static files from uploads directory
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // CORS configuration
 const corsOptions = {
@@ -39,6 +47,28 @@ const corsOptions = {
 
 // Add CORS middleware before other middleware
 app.use(cors(corsOptions));
+
+// Add response formatter middleware
+app.use((req, res, next) => {
+  // Store the original json method
+  const originalJson = res.json;
+
+  // Override the json method
+  res.json = function(data) {
+    // Format the response
+    const formattedResponse = {
+      success: res.statusCode >= 200 && res.statusCode < 300,
+      statusCode: res.statusCode,
+      message: data.message || 'Operation successful',
+      data: data.data || data
+    };
+
+    // Call the original json method with the formatted response
+    return originalJson.call(this, formattedResponse);
+  };
+
+  next();
+});
 
 // Add logging middleware
 app.use((req, res, next) => {

@@ -12,15 +12,21 @@ export const addProduct = async (req, res) => {
       return res.status(400).json({ message: "Name, description, price, quantity, and category are required." });
     }
 
-    // Create image path if file was uploaded
-    const imagePath = req.file ? `/src/assets/products/${req.file.filename}` : null;
+    // Handle multiple image uploads
+    const imagePaths = [];
+    if (req.files && req.files.length > 0) {
+      req.files.forEach(file => {
+        // Store relative path from uploads directory
+        imagePaths.push(`/uploads/products/${file.filename}`);
+      });
+    }
 
     // Create new product
     const newProduct = new Product({
       name,
       description,
       pricePerDay,
-      images: imagePath ? [imagePath] : [], // Store the relative path
+      images: imagePaths,
       quantity,
       category,
       availability: availability ?? true,
@@ -29,11 +35,26 @@ export const addProduct = async (req, res) => {
     // Save product to database
     await newProduct.save();
 
-    res.status(201).json({ message: "Product added successfully", product: newProduct });
+    res.status(201).json({ 
+      message: "Product added successfully", 
+      product: newProduct 
+    });
 
   } catch (error) {
     console.error("Error adding product:", error);
-    res.status(500).json({ message: "Server error", error });
+    
+    // If there's a validation error, return specific error message
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({ 
+        message: "Validation error", 
+        error: error.message 
+      });
+    }
+
+    res.status(500).json({ 
+      message: "Server error", 
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error' 
+    });
   }
 };
 
@@ -64,21 +85,12 @@ export const getAllProducts = async (req, res) => {
     console.log('Final query:', JSON.stringify(query));
 
     // Fetch products based on filters
-    const products = await Product.find(query)
-      .lean()
-      .select('-_id -__v') // Exclude MongoDB specific fields
-      .exec();
+    const products = await Product.find(query).exec();
 
     console.log(`Found ${products.length} products`);
 
-    // Set response headers
-    res.setHeader('Content-Type', 'application/json');
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Cache-Control', 'no-cache');
-
     if (!products || products.length === 0) {
       return res.status(200).json({
-        success: true,
         message: "No products found",
         data: {
           products: [],
@@ -88,20 +100,26 @@ export const getAllProducts = async (req, res) => {
     }
 
     // Format the response
-    const formattedProducts = products.map(product => ({
-      ...product,
-      pricePerDay: Number(product.pricePerDay).toFixed(2),
-      availability: Boolean(product.availability)
-    }));
-
-    res.status(200).json({
-      success: true,
+    const response = {
       message: "Products retrieved successfully",
       data: {
-        products: formattedProducts,
-        count: formattedProducts.length
+        products: products.map(product => ({
+          id: product.id,
+          name: product.name,
+          description: product.description,
+          pricePerDay: Number(product.pricePerDay).toFixed(2),
+          quantity: Number(product.quantity),
+          category: product.category,
+          subcategory: product.subcategory || '',
+          availability: Boolean(product.availability),
+          images: product.images || [],
+          createdAt: product.createdAt
+        })),
+        count: products.length
       }
-    });
+    };
+
+    res.status(200).json(response);
 
   } catch (error) {
     console.error("Error fetching products:", error);
@@ -113,7 +131,6 @@ export const getAllProducts = async (req, res) => {
     });
     
     res.status(500).json({ 
-      success: false,
       message: "Failed to fetch products", 
       error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
     });

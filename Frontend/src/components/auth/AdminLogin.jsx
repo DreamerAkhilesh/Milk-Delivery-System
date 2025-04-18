@@ -40,7 +40,7 @@ const AdminLogin = () => {
       dispatch(setUser(adminData));
       
       // Navigate to admin dashboard
-      navigate("/admin");
+      navigate("/admin/dashboard");
       
     } catch (err) {
       console.error("Login error:", err);

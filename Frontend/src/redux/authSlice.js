@@ -2,12 +2,14 @@ import { createSlice } from "@reduxjs/toolkit";
 
 // Load user from localStorage (if available)
 const storedUser = localStorage.getItem("user");
+const storedAdminToken = localStorage.getItem("adminToken");
 
 const authSlice = createSlice({
     name: "auth",
     initialState: {
         loading: false,
-        user: storedUser ? JSON.parse(storedUser) : null, // Persist user session
+        user: storedUser ? JSON.parse(storedUser) : null,
+        isAdmin: !!storedAdminToken,
     },
     reducers: {
         setLoading: (state, action) => {
@@ -15,11 +17,14 @@ const authSlice = createSlice({
         },
         setUser: (state, action) => {
             state.user = action.payload;
-            localStorage.setItem("user", JSON.stringify(action.payload)); // Store in localStorage
+            state.isAdmin = action.payload?.role === "admin";
+            localStorage.setItem("user", JSON.stringify(action.payload));
         },
         logoutUser: (state) => {
             state.user = null;
-            localStorage.removeItem("user"); // Clear on logout
+            state.isAdmin = false;
+            localStorage.removeItem("user");
+            localStorage.removeItem("adminToken");
         }
     }
 });

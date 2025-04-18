@@ -12,8 +12,8 @@ import { verifyAdmin } from "../middlewares/auth_middleware.js";
 const router = express.Router();
 
 // Admin product management routes
-router.post("/add", verifyAdmin, upload.single('productImage'), addProduct);
-router.put("/:id", verifyAdmin, upload.single('productImage'), updateProduct);
+router.post("/add", verifyAdmin, upload.array('productImages', 5), addProduct); // Allow up to 5 images
+router.put("/:id", verifyAdmin, upload.array('productImages', 5), updateProduct);
 router.delete("/:id", verifyAdmin, deleteProduct);
 router.get("/", verifyAdmin, getAllProducts); // Admin view of all products
 router.get("/:id", verifyAdmin, getProductById); // Admin view of single product

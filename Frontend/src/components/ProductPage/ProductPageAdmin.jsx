@@ -78,17 +78,15 @@ const AdminProductPage = () => {
   };
 
   const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setImageFile(file);
-      // Create preview URL
-      const previewUrl = URL.createObjectURL(file);
-      setImagePreview(previewUrl);
+    const files = Array.from(e.target.files);
+    if (files.length > 0) {
+      const newImages = files.map(file => URL.createObjectURL(file));
+      setImageFile(files);
+      setImagePreview(newImages);
       
-      // Update newProduct state with the preview URL
       setNewProduct(prev => ({
         ...prev,
-        images: [previewUrl]
+        images: newImages
       }));
     }
   };
@@ -104,7 +102,9 @@ const AdminProductPage = () => {
       formData.append('availability', newProduct.availability);
       
       if (imageFile) {
-        formData.append('productImage', imageFile);
+        imageFile.forEach((file, index) => {
+          formData.append('productImages', file);
+        });
       }
 
       const config = {
@@ -116,22 +116,19 @@ const AdminProductPage = () => {
 
       if (editMode) {
         await axios.put(
-          `${ADMIN_PRODUCTS_API_END_POINT}/products/${newProduct.id}`,
+          `${ADMIN_PRODUCTS_API_END_POINT}/${newProduct.id}`,
           formData,
           config
         );
       } else {
         await axios.post(
-          `${ADMIN_PRODUCTS_API_END_POINT}/products/add`,
+          `${ADMIN_PRODUCTS_API_END_POINT}/add`,
           formData,
           config
         );
       }
 
-      // Refresh products list
       await fetchProducts();
-      
-      // Reset form
       setIsOpen(false);
       setEditMode(false);
       setImageFile(null);
@@ -140,7 +137,7 @@ const AdminProductPage = () => {
         name: "",
         description: "",
         pricePerDay: "",
-        images: [""],
+        images: [],
         quantity: "",
         category: "Milk",
         availability: true,
@@ -155,15 +152,16 @@ const AdminProductPage = () => {
 
   const removeProduct = async (id) => {
     try {
-      await axios.delete(ADMIN_PRODUCTS_API_END_POINT, {
+      await axios.delete(`${ADMIN_PRODUCTS_API_END_POINT}/${id}`, {
         headers: {
           'Authorization': localStorage.getItem('adminToken')
         }
       });
       await fetchProducts();
+      toast.success("Product deleted successfully");
     } catch (error) {
       console.error("Error deleting product:", error);
-      alert(error.response?.data?.message || "Error deleting product");
+      toast.error(error.response?.data?.message || "Error deleting product");
     }
   };
 

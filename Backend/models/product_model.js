@@ -23,13 +23,18 @@ const productSchema = new mongoose.Schema({
     },
   ],
   quantity: {
-    type: String, 
+    type: Number, 
     required: true,
+    min: 0,
   },
   category: {
     type: String,
     enum: ["Milk", "Milk Products", "Traditional Sweets"],
     required: true,
+  },
+  subcategory: {
+    type: String,
+    required: false,
   },
   availability: {
     type: Boolean,
@@ -39,6 +44,15 @@ const productSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
+}, {
+  toJSON: {
+    transform: function(doc, ret) {
+      ret.id = ret._id;
+      delete ret._id;
+      delete ret.__v;
+      return ret;
+    }
+  }
 });
 
 export default mongoose.model("Product", productSchema);
