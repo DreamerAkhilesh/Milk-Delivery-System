@@ -33,7 +33,8 @@ const ProductPage = () => {
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json'
-        }
+        },
+        withCredentials: true
       });
       
       console.log('Response received:', response);

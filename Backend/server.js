@@ -25,24 +25,27 @@ app.use(cookieParser());
 
 // CORS configuration
 const corsOptions = {
-  origin: process.env.NODE_ENV === 'production' 
-    ? ['https://milk-delivery-frontend.onrender.com', 'http://localhost:5173'] 
-    : '*',
+  origin: ['https://milk-delivery-frontend.onrender.com', 'http://localhost:5173'],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+  exposedHeaders: ['Content-Range', 'X-Content-Range'],
   credentials: true,
+  maxAge: 600, // Cache preflight request for 10 minutes
   preflightContinue: false,
   optionsSuccessStatus: 204
 };
 
+// Add CORS middleware before other middleware
+app.use(cors(corsOptions));
+
 // Add logging middleware
 app.use((req, res, next) => {
   console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
+  console.log('Origin:', req.headers.origin);
   console.log('Headers:', req.headers);
   next();
 });
 
-app.use(cors(corsOptions));
 app.use(express.json());
 
 // Routes
