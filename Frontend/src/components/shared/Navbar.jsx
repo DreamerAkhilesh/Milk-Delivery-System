@@ -13,19 +13,13 @@ import {
   PopoverTrigger,
   PopoverContent,
 } from "../ui/popover";
-import { useCart } from '../../context/CartContext';
-import CartSidebar from '../Cart/CartSidebar';
 import logo from '../../assets/logo1.png';
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isCartOpen, setIsCartOpen] = useState(false);
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { user } = useSelector((state) => state.auth);
-  const { cart } = useCart();
-
-  const totalItems = cart.reduce((total, item) => total + item.quantity, 0);
 
   const handleLogout = async () => {
     try {
@@ -48,7 +42,6 @@ const Navbar = () => {
 
       dispatch(logoutUser());
       setIsMenuOpen(false);
-      setIsCartOpen(false);
       navigate("/home");
       toast.success(res.data.message || "Logged out successfully");
     } catch (error) {
@@ -62,7 +55,6 @@ const Navbar = () => {
         localStorage.removeItem("token");
       }
       setIsMenuOpen(false);
-      setIsCartOpen(false);
       navigate("/home");
     }
   };
@@ -233,19 +225,6 @@ const Navbar = () => {
           <div className="flex items-center space-x-4">
             {user ? (
               <>
-                {user.role !== "admin" && (
-                  <button
-                    onClick={() => setIsCartOpen(true)}
-                    className="relative p-2 text-gray-600 hover:text-gray-900"
-                  >
-                    <Package className="h-6 w-6" />
-                    {totalItems > 0 && (
-                      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                        {totalItems}
-                      </span>
-                    )}
-                  </button>
-                )}
                 <Popover>
                   <PopoverTrigger>
                     <Avatar className="cursor-pointer">
@@ -279,7 +258,6 @@ const Navbar = () => {
       </div>
 
       {isMenuOpen && renderMobileMenu()}
-      <CartSidebar isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
     </nav>
   );
 };

@@ -5,18 +5,20 @@ import { USER_API_END_POINT } from "../../utils/constant";
 import { toast } from "sonner";
 import Navbar from "../shared/Navbar";
 import CatalogueCard from "../HomePage/CatalogueCard";
-import { useCart } from "../../context/CartContext";
 
 const ProductDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { addToCart, cart } = useCart();
   const [product, setProduct] = useState(null);
   const [relatedProducts, setRelatedProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
+  const [subscriptionType, setSubscriptionType] = useState("");
+
+  // Check if both subscription type and quantity are selected
+  const isSubscriptionReady = quantity > 0 && subscriptionType !== "";
 
   useEffect(() => {
     fetchProductDetails();
@@ -29,12 +31,60 @@ const ProductDetail = () => {
       setError(null);
       
       const response = await axios.get(`${USER_API_END_POINT}/products/${id}`);
+      console.log("Product details response:", response.data);
       
-      if (!response.data || !response.data.product) {
+      // Extract product data based on response format
+      let productData = null;
+      
+      // Handle different possible response formats
+      if (response.data.data && response.data.data.product) {
+        // New format: { success, statusCode, message, data: { product } }
+        console.log("New response format detected with nested data.product");
+        productData = response.data.data.product;
+      } else if (response.data.data) {
+        // Alternative format: { success, statusCode, message, data }
+        console.log("New response format detected with data");
+        productData = response.data.data;
+      } else if (response.data.product) {
+        // Original format: { message, product }
+        console.log("Original response format detected");
+        productData = response.data.product;
+      } else {
+        console.error("Unexpected response format:", response.data);
         throw new Error('Invalid response format');
       }
 
-      setProduct(response.data.product);
+      if (!productData) {
+        throw new Error('Product data not found in response');
+      }
+
+      console.log("Raw product data before processing:", productData);
+      
+      // Ensure the product has an ID - try different possible formats
+      if (!productData._id && productData.id) {
+        console.log("Using 'id' instead of '_id'");
+        productData._id = productData.id;
+      }
+      
+      // If we're getting raw data with the id as a parameter
+      if (!productData._id && id) {
+        console.log("Using URL parameter as ID");
+        productData._id = id;
+      }
+
+      // Verify that the product has all required fields
+      if (!productData._id) {
+        console.error("Product is missing _id field:", productData);
+        throw new Error('Product ID is missing');
+      }
+
+      if (productData.pricePerDay === undefined || productData.pricePerDay === null) {
+        console.error("Product is missing pricePerDay field:", productData);
+        throw new Error('Product price information is missing');
+      }
+
+      console.log("Final processed product data:", productData);
+      setProduct(productData);
       setSelectedImage(0);
     } catch (error) {
       console.error("Error fetching product details:", error);
@@ -48,14 +98,32 @@ const ProductDetail = () => {
   const fetchRelatedProducts = async () => {
     try {
       const response = await axios.get(`${USER_API_END_POINT}/products`);
-      if (response.data && response.data.products) {
-        // Filter out current product and get 4 random related products
-        const filteredProducts = response.data.products
-          .filter(p => p._id !== id)
-          .sort(() => 0.5 - Math.random())
-          .slice(0, 4);
-        setRelatedProducts(filteredProducts);
+      console.log("Related products response:", response.data);
+      
+      // Extract products based on response format
+      let productsData = [];
+      
+      if (response.data.data && response.data.data.products) {
+        // New format: { success, statusCode, message, data: { products } }
+        productsData = response.data.data.products;
+      } else if (response.data.products) {
+        // Original format: { message, products }
+        productsData = response.data.products;
+      } else if (Array.isArray(response.data)) {
+        // Direct array format
+        productsData = response.data;
+      } else {
+        console.warn("Unexpected format for products list:", response.data);
+        return;
       }
+      
+      // Filter out current product and get 4 random related products
+      const filteredProducts = productsData
+        .filter(p => p._id !== id)
+        .sort(() => 0.5 - Math.random())
+        .slice(0, 4);
+        
+      setRelatedProducts(filteredProducts);
     } catch (error) {
       console.error("Error fetching related products:", error);
     }
@@ -68,17 +136,65 @@ const ProductDetail = () => {
     }
   };
 
-  const handleAddToCart = () => {
+  const handleSubscriptionTypeChange = (e) => {
+    setSubscriptionType(e.target.value);
+  };
+
+  const handleConfirmSubscription = () => {
     if (!product.availability) {
       toast.error("This product is currently out of stock");
       return;
     }
 
-    addToCart(product, quantity);
-    toast.success(`${quantity} ${product.name} added to cart!`);
-  };
+    if (!isSubscriptionReady) {
+      toast.error("Please select both quantity and subscription type");
+      return;
+    }
 
-  const isInCart = cart.some(item => item._id === product?._id);
+    // Ensure the product object has all required fields
+    if (!product._id) {
+      console.error("Product is missing _id field:", product);
+      toast.error("Invalid product data. Please try again.");
+      return;
+    }
+
+    if (!product.pricePerDay) {
+      console.error("Product is missing pricePerDay field:", product);
+      toast.error("Product price information is missing. Please try again.");
+      return;
+    }
+
+    // Log what we're passing to the next page
+    console.log("Navigating to subscription confirm with:", {
+      product: {
+        _id: product._id,
+        name: product.name,
+        pricePerDay: product.pricePerDay,
+        availability: product.availability,
+      },
+      quantity,
+      subscriptionType
+    });
+
+    // Navigate to subscription confirmation page with necessary details
+    navigate("/subscription/confirm", {
+      state: {
+        product: {
+          _id: product._id,
+          name: product.name,
+          pricePerDay: product.pricePerDay,
+          description: product.description,
+          category: product.category,
+          images: product.images,
+          image: product.image,
+          availability: product.availability,
+          quantity: product.quantity
+        },
+        quantity,
+        subscriptionType
+      }
+    });
+  };
 
   if (loading) {
     return (
@@ -182,40 +298,59 @@ const ProductDetail = () => {
               </span>
             </div>
 
-            {/* Quantity Selector */}
-            {product.quantity > 0 && (
-              <div className="flex items-center gap-4">
-                <label className="text-gray-700">Quantity:</label>
+            {/* Subscription Form */}
+            <div className="space-y-4 pt-4 border-t border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900">Subscription Details</h3>
+              
+              {/* Quantity Selector */}
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">Quantity</label>
                 <input
                   type="number"
                   min="1"
                   max={product.quantity}
                   value={quantity}
                   onChange={handleQuantityChange}
-                  className="w-20 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#00B86C]"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#00B86C]"
                 />
               </div>
-            )}
-
-            {/* Action Buttons */}
-            <div className="flex gap-4">
-              <button
-                onClick={handleAddToCart}
-                disabled={!product.availability || isInCart}
-                className={`flex-1 px-6 py-3 rounded-md font-medium transition-colors ${
-                  product.availability && !isInCart
-                    ? "bg-[#00B86C] text-white hover:bg-[#009c5b]"
-                    : "bg-gray-300 text-gray-500 cursor-not-allowed"
-                }`}
-              >
-                {isInCart ? "Already in Cart" : "Add to Cart"}
-              </button>
-              <button
-                onClick={() => navigate("/products")}
-                className="px-6 py-3 border border-gray-300 rounded-md font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-              >
-                Back to Products
-              </button>
+              
+              {/* Subscription Type Selector */}
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">Subscription Type</label>
+                <select
+                  value={subscriptionType}
+                  onChange={handleSubscriptionTypeChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#00B86C]"
+                >
+                  <option value="">Select a subscription type</option>
+                  <option value="daily">Daily</option>
+                  <option value="alternate">Alternate Days</option>
+                  <option value="weekly">Weekly</option>
+                  <option value="one-time">One Time</option>
+                </select>
+              </div>
+              
+              {/* Action Buttons */}
+              <div className="flex gap-4 pt-4">
+                <button
+                  onClick={handleConfirmSubscription}
+                  disabled={!product.availability || !isSubscriptionReady}
+                  className={`flex-1 px-6 py-3 rounded-md font-medium transition-colors ${
+                    product.availability && isSubscriptionReady
+                      ? "bg-[#00B86C] text-white hover:bg-[#009c5b]"
+                      : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                  }`}
+                >
+                  Confirm Subscription
+                </button>
+                <button
+                  onClick={() => navigate("/products")}
+                  className="px-6 py-3 border border-gray-300 rounded-md font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  Back to Products
+                </button>
+              </div>
             </div>
 
             {/* Additional Information */}

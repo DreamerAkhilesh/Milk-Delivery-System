@@ -49,7 +49,11 @@ export const verifyUser = async (req, res, next) => {
     const verified = jwt.verify(token, process.env.JWT_SECRET);
     if (!verified) return res.status(403).json({ message: "Invalid Token" });
 
-    const user = await User.findById(verified.id);
+    // Use userId from token instead of id
+    const userId = verified.userId || verified.id;
+    if (!userId) return res.status(403).json({ message: "Invalid token: missing user ID" });
+
+    const user = await User.findById(userId);
     if (!user) return res.status(403).json({ message: "User not found" });
 
     req.user = user;

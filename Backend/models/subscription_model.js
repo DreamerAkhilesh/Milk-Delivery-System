@@ -6,15 +6,33 @@ const SubscriptionSchema = new mongoose.Schema({
     ref: "User",
     required: true,
   },
+  productId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Product",
+    required: true,
+  },
   product: {
     type: String,
     required: true,
+  },
+  quantity: {
+    type: Number,
+    required: true,
+    default: 1,
   },
   pricePerDay: {
     type: Number,
     required: true,
   },
+  totalCost: {
+    type: Number,
+    required: true,
+  },
   startDate: {
+    type: Date,
+    required: true,
+  },
+  endDate: {
     type: Date,
     required: true,
   },
@@ -34,8 +52,8 @@ const SubscriptionSchema = new mongoose.Schema({
   ],
   status: {
     type: String,
-    enum: ["active", "paused", "cancelled"],
-    default: "active",
+    enum: ["active", "paused", "cancelled", "pending_payment", "expired"],
+    default: "pending_payment",
   },
   pauseReason: {
     type: String,
@@ -44,8 +62,18 @@ const SubscriptionSchema = new mongoose.Schema({
   },
   deliveryFrequency: {
     type: String,
-    enum: ["daily", "alternate", "weekly"],
+    enum: ["daily", "alternate", "weekly", "one-time"],
     default: "daily",
+  },
+  subscriptionPlan: {
+    type: String,
+    enum: ["15_days", "1_month", "2_months", "3_months", "6_months", "1_year"],
+    default: "15_days",
+  },
+  durationDays: {
+    type: Number,
+    required: true,
+    default: 15,
   },
   address: {
     street: {
@@ -68,8 +96,11 @@ const SubscriptionSchema = new mongoose.Schema({
   },
   paymentMethod: {
     type: String,
-    enum: ["online", "cod"],
+    enum: ["wallet", "online", "cod"],
     default: "online",
+  },
+  paymentId: {
+    type: String,
   },
   lastPaymentDate: {
     type: Date,

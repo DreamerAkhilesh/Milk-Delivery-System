@@ -10,6 +10,7 @@ import adminRoutes from "./routers/admin_router.js";
 import adminProductRoutes from "./routers/admin_product_router.js";
 import userProductRoutes from "./routers/user_product_router.js";
 import publicProductRoutes from "./routers/public_product_router.js";
+import subscriptionRoutes from "./routers/subscription_router.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -87,6 +88,7 @@ app.use("/api/v1/admin", adminRoutes);
 app.use("/api/v1/admin/products", adminProductRoutes);
 app.use("/api/v1/user/products", userProductRoutes);
 app.use("/api/v1/products", publicProductRoutes);
+app.use("/api/v1/user/subscriptions", subscriptionRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
